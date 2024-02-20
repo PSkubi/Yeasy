@@ -14,9 +14,18 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 # https://www.youtube.com/watch?v=GFEgB_ytDZY
 # https://www.youtube.com/watch?v=iOvrq6ssy2Y
 
-
 ############################## Setup ####################################
 
+############################## IVA PART ################################
+def syringe_volume(Flowrate,volume):
+    '''Here will be the code operating the syringe, taking the flowrate and volume desired'''
+    # here #
+    return (Flowrate, volume)
+def syringe_duration(Flowrate,duration):
+    '''Here will be the code operating the syringe, taking the flowrate and duration desired'''
+    # here #
+    return (Flowrate, duration)
+############################# END OF IVA PART ######################
 # Start with identifying the directory and folders within it
 folder =os.path.dirname(os.path.realpath(__file__))
 flist = [0,0]
@@ -132,13 +141,13 @@ imgcol = [[chamber_info_elementimg],[image_elem]]
 graphcol = [[chamber_info_elementplt],[canvas_elem]]
 leftcol = [
     [sg.Listbox(values=c_list,font=('Calibri', 20), change_submits=True, size=(30, 20), key='listbox',expand_y=True)],
-    [sg.Button('Live view', size=(8, 2)), sg.Button('Graph', size=(8, 2))],
+    [sg.Button('Live view', size=(8, 2)), sg.Button('Graph', size=(8, 2)),sg.Button('Syringe control',size=(8,2))],
 ]
 
 layout = [[sg.Column(leftcol,expand_x=True), sg.Column(imgcol, key='-COL1-',expand_x=True), sg.Column(graphcol, visible=False, key='-COL2-',expand_x=True)]]
 
 window = sg.Window('Yeasy', layout, return_keyboard_events=True,size=(1920,1080),
-                   location=(0, 0), use_default_focus=False, finalize=True,keep_on_top=True)
+                   location=(0, 0), use_default_focus=False, finalize=True,keep_on_top=False)
 ################################# The main loop ###################################
 
 # i is the number of the image opened
@@ -182,7 +191,15 @@ while True:
     elif event == 'listbox':            # something from the listbox
         active_chamber = c_list.index(values["listbox"][0])            # selected filename
         filename = os.path.join(flist[0][active_chamber], fnames[active_chamber][0])  # read this file
-    
+    elif event =='Syringe control':
+        ControlType = sg.popup_yes_no('Do you want to use Volume or Duration control?',title='Control Type')
+        flowrate = sg.PopupGetText('What should be the flowrate?',title='Flowrate selection')
+        if ControlType:
+            volume = sg.popup_get_text('What should be the volume?',title='Volume Control')
+            syringe_volume(flowrate,volume)
+        else:
+            duration = sg.popup_get_text('What should be duration?',title='Duration Control')
+            syringe_duration(flowrate,duration)
     # update window with new image
     # update page display
     if not graphing:
