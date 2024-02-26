@@ -31,7 +31,7 @@ def del_step(q_id, step_id):
     """Deletes a step corresponding with step id from the queue corresponding with q id"""
     return
 
-@api.route("/queue/<int:q_id>/<int:step_id>>", methods=['UPDATE'])
+@api.route("/queue/<int:q_id>/<int:step_id>", methods=['UPDATE'])
 def update_step(q_id, step_id):
     """Edits a step within a specific queue corresponding to q id. The step must not be in progress."""
     return
