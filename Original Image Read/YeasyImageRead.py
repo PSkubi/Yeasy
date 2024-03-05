@@ -17,10 +17,12 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 ############################## Setup ####################################
 
 ############################## IVA PART ################################
-def syringe_operation(Flowrate,control,type):
+def syringe_operation(syringecontrols):
     '''Here will be the code operating the syringe, taking the flowrate and volume/duration desired'''
     # here #
-    return (Flowrate,control,type)
+    type,syringeno,flowrate,control = syringecontrols
+    print(f'Type: {type}, Syringe number: {syringeno}, Flow rate: {flowrate}, Control: {control}')
+    return (type,syringeno,flowrate,control)
 ############################# END OF IVA PART ######################
 # Start with identifying the directory and folders within it
 folder =os.path.dirname(os.path.realpath(__file__))
@@ -138,18 +140,20 @@ def syringewindow():
         type = 'Close :)'
     layout = [
         [sg.Text(f'You have chosen {type} control')],
+        [[sg.Text('Syringe number:')],[sg.Input('',size=(10, 4),key='-Syringe no-')]],
         [[sg.Text('Flow rate:')],[sg.Input('',size=(10, 4),key='-Flow rate-'),sg.Text('L/min')]],
         [[sg.Text(f'{type}:')],[sg.Input('', size=(10, 4),key ='-Control-'),sg.Text(f'{measure}')]],
         [sg.Button('Cancel', size=(8, 2)),sg.Button('Confirm',size=(8,2))]
     ]
     syringewindow2= sg.Window(f'Flow rate and {type} control',layout,size=(600,400))
     event, values = syringewindow2.read()
-    if event == sg.WIN_CLOSED or 'Cancel':
+    if event == 'Cancel':
         syringewindow2.close()
-    flowrate = float(values['-Flow rate-'])
-    control = float(values['-Control-'])
-    return flowrate,control,type
-
+    elif event in ('Confirm'):
+        userinput = [type,float(values['-Syringe no-']),float(values['-Flow rate-']),float(values['-Control-'])]
+        syringewindow2.close()
+        return userinput
+    
 ############################ Start reading data #############################
 
 # active chamber index
@@ -222,8 +226,8 @@ while True:
         filename = os.path.join(flist[0][active_chamber], fnames[active_chamber][0])  # read this file
     elif event =='Syringe control':
         syringecontrols = syringewindow()
-        xd = syringe_operation(syringecontrols[0],syringecontrols[1],syringecontrols[2])
-        print(xd)
+        syringe_operation(syringecontrols)
+        
     # update window with new image
     # update page display
     if not graphing:
