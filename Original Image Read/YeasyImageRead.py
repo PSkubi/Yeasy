@@ -20,9 +20,11 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 def syringe_operation(syringecontrols):
     '''Here will be the code operating the syringe, taking the flowrate and volume/duration desired'''
     # here #
-    type,syringeno,flowrate,control = syringecontrols
-    print(f'Type: {type}, Syringe number: {syringeno}, Flow rate: {flowrate}, Control: {control}')
-    return (type,syringeno,flowrate,control)
+    if syringecontrols == []:
+        return ('',0,0,0,0,0)
+    type,syringeno,flowrate,control,flowrate_units,control_units = syringecontrols
+    print(f'Type: {type}, Syringe number: {syringeno}, Flow rate: {flowrate}{flowrate_units}, Control: {control}{control_units}')
+    return (type,syringeno,flowrate,control,flowrate_units,control_units)
 ############################# END OF IVA PART ######################
 # Start with identifying the directory and folders within it
 folder =os.path.dirname(os.path.realpath(__file__))
@@ -131,26 +133,28 @@ def syringewindow():
     if event=='Volume':
         syringewindow1.close()
         type = 'Volume'
-        measure = 'L'
+        measure_units = ['µL', 'mL', 'L']
     elif event=='Duration':
         syringewindow1.close()
         type = 'Duration'
-        measure = 'min'
+        measure_units = ['minutes','hours']
     else:
         type = 'Close :)'
+    flowrate_units = ['µL/min', 'mL/min', 'µL/hr', 'mL/hr']
     layout = [
         [sg.Text(f'You have chosen {type} control')],
         [[sg.Text('Syringe number:')],[sg.Input('',size=(10, 4),key='-Syringe no-')]],
-        [[sg.Text('Flow rate:')],[sg.Input('',size=(10, 4),key='-Flow rate-'),sg.Text('L/min')]],
-        [[sg.Text(f'{type}:')],[sg.Input('', size=(10, 4),key ='-Control-'),sg.Text(f'{measure}')]],
+        [[sg.Text('Flow rate:')],[sg.Input('',size=(10, 4),key='-Flow rate-'),sg.Combo(flowrate_units, font=('Arial Bold', 12),key='-Flowrate units-')]],#sg.Text('L/min')]],
+        [[sg.Text(f'{type}:')],[sg.Input('', size=(10, 4),key ='-Control-'),sg.Combo(measure_units, font=('Arial Bold', 12),key='-Control units-')]],
         [sg.Button('Cancel', size=(8, 2)),sg.Button('Confirm',size=(8,2))]
     ]
     syringewindow2= sg.Window(f'Flow rate and {type} control',layout,size=(600,400))
     event, values = syringewindow2.read()
     if event == 'Cancel':
         syringewindow2.close()
+        return []
     elif event in ('Confirm'):
-        userinput = [type,float(values['-Syringe no-']),float(values['-Flow rate-']),float(values['-Control-'])]
+        userinput = [type,int(values['-Syringe no-']),float(values['-Flow rate-']),float(values['-Control-']),str(values['-Flowrate units-']),str(values['-Control units-'])]
         syringewindow2.close()
         return userinput
     
