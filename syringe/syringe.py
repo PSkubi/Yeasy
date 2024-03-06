@@ -10,6 +10,9 @@ class Syringe:
     def __init__(self, conn, address):
         self.conn = conn
         self.address = address
+
+        self.status = ""
+        self.history = []
         return
     
     def _check_float(self, f):

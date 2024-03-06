@@ -1,37 +1,44 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, request
+from .syringe_controller import SyringeController
 
 api = Blueprint("backend", __name__)
+
+syringe_controller = SyringeController()
 
 @api.route("/")
 def home():
     return
 
-@api.route("/queue", methods=['GET'])
+@api.route("/syringe", methods=['GET'])
 def q_read_all():
-    """Gets all queues"""
+    """Gets all syringes"""
+    syringes = syringe_controller.GetAll()
+    return syringes
+
+@api.route("/syringe/<int:sid>", methods=['GET'])
+def read_sid(sid):
+    """Gets the syringe corresponding to the sid"""
+    syringe = syringe_controller.Get(sid)
+    return syringe
+
+@api.route("/syringe/<int:sid>", methods=['POST'])
+def add_phase(sid):
+    """Adds a new step to the corresponding sid"""
+    phase = request.json.get("phase_data")
+    status = syringe_controller.AddPhase(sid, phase)
+    return status
+
+@api.route("/syringe/<int:sid>", methods=['DELETE'])
+def del_job(sid):
+    """Deletes the syringe corresponding to the sid"""
     return
 
-@api.route("/queue/<int:q_id>", methods=['GET'])
-def read_q_id(q_id):
-    """Gets the queue corresponding to the q id"""
+@api.route("/syringe/<int:sid>/<int:phase_number>", methods=['DELETE'])
+def del_step(sid, phase_number):
+    """Deletes a step corresponding with step id from the syringe corresponding with sid"""
     return
 
-@api.route("/queue/<int:q_id>", methods=['POST'])
-def add_step(q_id):
-    """Adds a new step to the corresponding q id"""
-    return
-
-@api.route("/queue/<int:q_id>", methods=['DELETE'])
-def del_job(q_id):
-    """Deletes the queue corresponding to the q id"""
-    return
-
-@api.route("/queue/<int:q_id>/<int:step_id>", methods=['DELETE'])
-def del_step(q_id, step_id):
-    """Deletes a step corresponding with step id from the queue corresponding with q id"""
-    return
-
-@api.route("/queue/<int:q_id>/<int:step_id>", methods=['UPDATE'])
-def update_step(q_id, step_id):
-    """Edits a step within a specific queue corresponding to q id. The step must not be in progress."""
+@api.route("/syringe/<int:sid>/<int:phase_number>", methods=['UPDATE'])
+def update_step(sid, phase_number):
+    """Edits a step within a specific syringe corresponding to sid. The step must not be in progress."""
     return
