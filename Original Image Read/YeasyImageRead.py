@@ -2,7 +2,6 @@ import PySimpleGUI as sg
 import os
 from PIL import Image, ImageTk
 import io
-import numpy as np
 import matplotlib.pyplot as plt
 import csv
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -21,10 +20,11 @@ def syringe_operation(syringecontrols):
     '''Here will be the code operating the syringe, taking the flowrate and volume/duration desired'''
     # here #
     if syringecontrols == []:
-        return ('',0,0,0,0,0)
-    type,syringeno,flowrate,control,flowrate_units,control_units = syringecontrols
-    print(f'Type: {type}, Syringe number: {syringeno}, Flow rate: {flowrate}{flowrate_units}, Control: {control}{control_units}')
-    return (type,syringeno,flowrate,control,flowrate_units,control_units)
+        return ('None',0,0,0,0,0)
+    else:
+        controltype,syringeno,flowrate,control,flowrate_units,control_units = syringecontrols
+    print(f'Type: {controltype}, Syringe number: {syringeno}, Flow rate: {flowrate}{flowrate_units}, Control: {control}{control_units}')
+    return (controltype,syringeno,flowrate,control,flowrate_units,control_units)
 ############################# END OF IVA PART ######################
 # Start with identifying the directory and folders within it
 folder =os.path.dirname(os.path.realpath(__file__))
