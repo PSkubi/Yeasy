@@ -3,8 +3,8 @@ import time
 
 HEADER = 64                                                     # the first message the client sends to the server will be the length of the message
 PORT = 5050                                                     # port that we are going to use
-#server = '192.168.1.29'
-SERVER = socket.gethostbyname(socket.gethostname())             # get the ip address of the server
+SERVER = '192.168.1.29'
+#SERVER = socket.gethostbyname(socket.gethostname())             # get the ip address of the server
 ADDR = (SERVER, PORT)                                           # tuple of the server and port
 FORMAT = 'utf-8'                                                # format of the message
 DISCONNECT_MESSAGE = "!DISCONNECT"                              # message to disconnect
