@@ -25,10 +25,9 @@ def send(msg):
     msg_length = len(message)                                   # get the length of the message
     send_length = str(msg_length).encode(FORMAT)                # encode the length of the message
     send_length += b' ' * (HEADER - len(send_length))           # add spaces to the length of the message to make it 64 bytes
-    client.send(send_length)                                   
+    client.send(send_length)                                    # send the length of the message                             
     client.send(message)                                        # send the message
-send("Hello World!")
-send("Starting transmiting data...")
+
 i=0
 ########################### File Management ############################
 # Start with identifying the directory and folders within it
@@ -88,20 +87,14 @@ def get_img_data(f, maxsize=(1600, 1000), first=False):
 # active chamber index
 active_chamber = 0
 
-# Take the first file in the directory
-filename = os.path.join(flist[0][active_chamber], fnames[active_chamber][0]) 
-
-# Extract image data
-image_data = bytes(get_img_data(filename, first=True))
-image_size = len(image_data)
-print(f'Image size: {image_size}')
 i = 0
 while True:
     time.sleep(1)
-    i += 1
     if i >= chamber_sizes[active_chamber]:
         i -= chamber_sizes[active_chamber]
     filename = os.path.join(flist[0][active_chamber], fnames[active_chamber][i])
     image_data = bytes(get_img_data(filename, first=True))
     image_size = len(image_data)
     send(f'Image size of {i}: {image_size}')
+    client.send(image_data)
+    i+=1
