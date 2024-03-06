@@ -130,6 +130,7 @@ def syringewindow():
     event, values = syringewindow1.read()
     if event == sg.WIN_CLOSED or 'Cancel':
         syringewindow1.close()
+        return []
     if event=='Volume':
         syringewindow1.close()
         type = 'Volume'
@@ -169,6 +170,7 @@ filename = os.path.join(flist[0][active_chamber], fnames[active_chamber][0])
 # Extract image data
 image_elem = sg.Image(data=get_img_data(filename, first=True))
 
+################################# The layout ###################################
 # Also get display elements. This is just for debugging (so that we can see what's going on)
 chamber_info_elementimg = sg.Text(text='Live video feed from Chamber {}'.format(active_chamber+1),expand_x=True,justification='center',font=('Calibri',30))
 chamber_info_elementplt = sg.Text(text='Graph of data from Chamber {}'.format(active_chamber+1),expand_x=True,justification='center',font=('Calibri',30))
