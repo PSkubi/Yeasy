@@ -82,6 +82,10 @@ def get_img_data(f, maxsize=(1600, 1000), first=False):
         return bio.getvalue()
     return ImageTk.PhotoImage(img)
 
+def image_to_bytes(image_path):
+    with open(image_path, 'rb') as image_file:
+        image_bytes = io.BytesIO(image_file.read())
+        return image_bytes.getvalue()
 ##################################  Start reading data ######################################
 
 # active chamber index
@@ -93,8 +97,14 @@ while True:
     if i >= chamber_sizes[active_chamber]:
         i -= chamber_sizes[active_chamber]
     filename = os.path.join(flist[0][active_chamber], fnames[active_chamber][i])
-    image_data = bytes(get_img_data(filename, first=True))
-    image_size = len(image_data)
-    send(f'Image size of {i}: {image_size}')
-    client.send(image_data)
+    byte_im = image_to_bytes(filename)
+    # im = Image.open('filename')
+    # im_resize = im.resize((500, 500))
+    # buf = io.BytesIO()
+    # im_resize.save(buf, format='PNG')
+    # byte_im = buf.getvalue()
+    # image_data = bytes(get_img_data(filename, first=True))
+    # image_size = len(image_data)
+    send(f'Image size of {i}: {len(byte_im)}')
+    client.send(byte_im)
     i+=1
