@@ -38,7 +38,7 @@ def handle_client(conn, addr):
     while connected:
         try:
             msg_info = conn.recv(HEADER).decode(FORMAT,errors='ignore')                    # receive and decode the message
-            if not msg_info == '':                                             # if the message is not empty, proceed
+            if 'img' in msg_info or 'str' in msg_info or 'byt' in msg_info and not msg_info == '':                                             # if the message is not empty, proceed
                 msg_info = msg_info.replace(' ','')                                 # split the message info: length and type
                 msg_info = msg_info.split('_')                                 # split the message info: length and type
                 print(f'Received message info: {msg_info}')
@@ -242,9 +242,9 @@ while True:
         figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(plotarguments,plotvalues))
         window.maximize()
         window['-COL2-'].expand(expand_x=True, expand_y=True, expand_row=False)
-    elif event == 'listbox':            # something from the listbox
-        active_chamber = c_list.index(values["listbox"][0])            # selected filename
-        filename = os.path.join(flist[0][active_chamber], fnames[active_chamber][0])  # read this file
+    # elif event == 'listbox':            # something from the listbox
+    #     active_chamber = c_list.index(values["listbox"][0])            # selected filename
+    #     filename = os.path.join(flist[0][active_chamber], fnames[active_chamber][0])  # read this file
     elif event =='Syringe control':
         syringecontrols = syringewindow()
         syringe_operation(syringecontrols)
