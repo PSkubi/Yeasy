@@ -28,7 +28,8 @@ def send_string(msg):
     client.send(send_info)                                    # send the length of the message                             
     client.send(message)                                        # send the message
 def send_bytes(msg):
-    msg_info = str(len(msg))+'_byt'                          # get the info of the message    
+    msg_info = str(len(msg))+'_byt'                          # get the info of the message   
+    print(f'Sent message info: {msg_info}') 
     send_info = msg_info.encode(FORMAT)                # encode the length of the message
     send_info += b' ' * (HEADER - len(send_info))           # add spaces to the length of the message to make it 64 bytes
     client.send(send_info)                                    # send the length of the message                             
@@ -95,7 +96,7 @@ def image_to_bytes(image_path):
 # active chamber index
 active_chamber = 0
 
-i = 0
+i = 1
 while True:
     time.sleep(1)
     if i >= chamber_sizes[active_chamber]:
@@ -104,4 +105,5 @@ while True:
     byte_im = image_to_bytes(filename)
     #send_string(f'Image size of {i}: {len(byte_im)}')
     send_bytes(byte_im)
+    print(f'Image number {i} of size {len(byte_im)} sent to the server!')
     i+=1
