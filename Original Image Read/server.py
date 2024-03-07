@@ -1,12 +1,9 @@
 import socket
 import threading
-import time
-import re
 import os
 from PIL import Image, ImageTk
 import io
 import matplotlib.pyplot as plt
-import csv
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import PySimpleGUI as sg
 
@@ -18,8 +15,6 @@ SERVER = socket.gethostbyname(socket.gethostname())
 ADDR = (SERVER, PORT)
 FORMAT = 'utf-8'
 DISCONNECT_MESSAGE = "!DISCONNECT"
-info_msg_pattern = r"Image size of \d+: \d+"
-num_pattern = r"\d+"
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(ADDR)
@@ -68,7 +63,7 @@ def get_img_data(f, maxsize=(1600, 1000), first=False):
         del img
         return bio.getvalue()
     return ImageTk.PhotoImage(img)
-filename = os.path.join(os.getcwd(), 'Original Image Read\\example.jpg')
+filename = os.path.join(os.getcwd(), 'Original Image Read\\waiting.jpg')
 image_elem = sg.Image(data=get_img_data(filename, first=True))
 
 ################################# The layout ##################################

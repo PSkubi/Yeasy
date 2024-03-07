@@ -33,7 +33,6 @@ def send_bytes(msg):
     send_info += b' ' * (HEADER - len(send_info))           # add spaces to the length of the message to make it 64 bytes
     client.send(send_info)                                    # send the length of the message                             
     client.send(msg)                                        # send the message
-i=0
 ########################### File Management ############################
 # Start with identifying the directory and folders within it
 folder =os.path.dirname(os.path.realpath(__file__))
