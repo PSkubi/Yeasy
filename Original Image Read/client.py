@@ -20,14 +20,19 @@ DISCONNECT_MESSAGE = "!DISCONNECT"                              # message to dis
 client =socket.socket(socket.AF_INET, socket.SOCK_STREAM)       # create a socket object
 client.connect(ADDR)                                            # connect to the server
 
-def send(msg):
+def send_string(msg):
     message = msg.encode(FORMAT)                                # encode the message
-    msg_length = len(message)                                   # get the length of the message
-    send_length = str(msg_length).encode(FORMAT)                # encode the length of the message
-    send_length += b' ' * (HEADER - len(send_length))           # add spaces to the length of the message to make it 64 bytes
-    client.send(send_length)                                    # send the length of the message                             
+    msg_info = str(len(message))+'_str'                          # get the info of the message    
+    send_info = msg_info.encode(FORMAT)                # encode the length of the message
+    send_info += b' ' * (HEADER - len(send_info))           # add spaces to the length of the message to make it 64 bytes
+    client.send(send_info)                                    # send the length of the message                             
     client.send(message)                                        # send the message
-
+def send_bytes(msg):
+    msg_info = str(len(msg))+'_byt'                          # get the info of the message    
+    send_info = msg_info.encode(FORMAT)                # encode the length of the message
+    send_info += b' ' * (HEADER - len(send_info))           # add spaces to the length of the message to make it 64 bytes
+    client.send(send_info)                                    # send the length of the message                             
+    client.send(msg)                                        # send the message
 i=0
 ########################### File Management ############################
 # Start with identifying the directory and folders within it
@@ -98,13 +103,6 @@ while True:
         i -= chamber_sizes[active_chamber]
     filename = os.path.join(flist[0][active_chamber], fnames[active_chamber][i])
     byte_im = image_to_bytes(filename)
-    # im = Image.open('filename')
-    # im_resize = im.resize((500, 500))
-    # buf = io.BytesIO()
-    # im_resize.save(buf, format='PNG')
-    # byte_im = buf.getvalue()
-    # image_data = bytes(get_img_data(filename, first=True))
-    # image_size = len(image_data)
-    send(f'Image size of {i}: {len(byte_im)}')
-    client.send(byte_im)
+    #send_string(f'Image size of {i}: {len(byte_im)}')
+    send_bytes(byte_im)
     i+=1

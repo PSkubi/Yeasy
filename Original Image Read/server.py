@@ -28,19 +28,22 @@ def handle_client(conn, addr):
     print(f"[NEW CONNECTION] {addr} connected.")
     connected = True
     while connected:
-        msg_length = conn.recv(HEADER).decode(FORMAT)
-        if msg_length:
-            msg_length = int(msg_length)
-            msg = conn.recv(msg_length).decode(FORMAT)
-            if msg == DISCONNECT_MESSAGE:
-                connected = False
-            print(f"[{addr}] {msg}")
-            if re.match(info_msg_pattern, msg):
-                data_number, data_size = list(map(int, re.findall(num_pattern, msg)))
-                data = conn.recv(data_size)
-                global image_elem
-                image_elem=sg.Image(data=data)
-            #print(data)
+        msg_info = conn.recv(HEADER).decode(FORMAT)                    # receive and decode the message
+        if not msg_info == '':                                             # if the message is not empty, proceed
+            msg_info = msg_info.replace(' ','')                                 # split the message info: length and type
+            msg_info = msg_info.split('_')                                 # split the message info: length and type
+            if msg_info[1] == 'str':
+                msg_length = int(msg_info[0])
+                msg = conn.recv(msg_length).decode(FORMAT)
+                if msg == DISCONNECT_MESSAGE:
+                    connected = False
+                print(f"[{addr}] {msg}")
+            elif msg_info[1] == 'byt':
+                msg_length = int(msg_info[0]) 
+                msg = conn.recv(msg_length)
+                print('Received bytes')
+                image = Image.open(io.BytesIO(msg))
+                image.show()
 
     conn.close()
 
@@ -92,8 +95,7 @@ leftcol = [
 
 layout = [[sg.Column(leftcol,expand_x=True), sg.Column(imgcol, key='-COL1-',expand_x=True), sg.Column(graphcol, visible=False, key='-COL2-',expand_x=True)]]
 
-window = sg.Window('Yeasy', layout, return_keyboard_events=True,size=(1920,1080),
-                   location=(0, 0), use_default_focus=False, finalize=True,keep_on_top=False)
+#window = sg.Window('Yeasy', layout, return_keyboard_events=True,size=(1920,1080),location=(0, 0), use_default_focus=False, finalize=True,keep_on_top=False)
 
 print("Server is starting...")
 #start()
@@ -109,15 +111,15 @@ graphing = False
 
 while True:
     # read the form, set the timeout in miliseconds
-    event, values = window.read(timeout=100)
+    #event, values = window.read(timeout=500)
     conn, addr = server.accept()
     thread = threading.Thread(target=handle_client, args=(conn, addr))
     thread.start()
     print(f"[ACTIVE CONNECTIONS] {threading.active_count() - 1}")
     #print(event, values)
     # if the window closes - break the loop
-    if event == sg.WIN_CLOSED:
-        break
+    #if event == sg.WIN_CLOSED:
+    #    break
     # elif event in ('Live view'):
     #     if not graphing:
     #         pass
@@ -157,4 +159,4 @@ while True:
     # else: 
     #     chamber_info_elementplt.update('Graph of data from Chamber {}'.format(active_chamber+1))
 # Close the window
-window.close()
+#window.close()
