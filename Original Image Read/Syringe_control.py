@@ -2,13 +2,12 @@ import PySimpleGUI as sg
 ########################### Syringe control windows ###################################
 ############################## IVA PART ################################
 def syringe_operation(syringecontrols):
-    '''Here will be the code operating the syringe, taking the flowrate and volume/duration desired'''
+    '''Here will be the code operating the syringe, taking the list of controltype,syringeno,flowrate,control,flowrate_units,control_units'''
     # here #
     if syringecontrols == []:
         return ('None',0,0,0,0,0)
     else:
         controltype,syringeno,flowrate,control,flowrate_units,control_units = syringecontrols
-    print(f'Type: {controltype}, Syringe number: {syringeno}, Flow rate: {flowrate}{flowrate_units}, Control: {control}{control_units}')
     return (controltype,syringeno,flowrate,control,flowrate_units,control_units)
 ############################# END OF IVA PART ######################
 def syringewindow1():

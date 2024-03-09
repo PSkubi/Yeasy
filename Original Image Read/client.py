@@ -176,7 +176,7 @@ while True:
     elif event =='Syringe control':
         syr_win_1 = syringewindow1()
         syr_win_2 = syringewindow2(syr_win_1[0],syr_win_1[1])
-        #syringe_operation(syringecontrols)
+        log(syringe_operation(syr_win_2))
     # update window with new image
     # update page display
     if not graphing and image_data is not None:
