@@ -234,7 +234,6 @@ while True:
         filename = os.path.join(flist[0][active_chamber], fnames[active_chamber][0])  # read this file
     elif event =='Syringe control':
         syr_win_1 = syringewindow1()
-        print(syr_win_1)
         syr_win_2 = syringewindow2(syr_win_1[0],syr_win_1[1])
         #syringe_operation(syringecontrols)
         

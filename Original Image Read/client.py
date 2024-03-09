@@ -5,19 +5,26 @@ import PySimpleGUI as sg
 import os
 from PIL import Image, ImageTk
 import io
+import csv
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from Plot_setup import *
+from Image_reading import *
+from Syringe_control import *
+start = time.time()
 
-HEADER = 64                                                     # the first message the client sends to the server will be the length of the message
-PORT = 5050                                                     # port that we are going to use
-#SERVER = '192.168.1.29'
-SERVER = socket.gethostbyname(socket.gethostname())             # get the ip address of the server
-ADDR = (SERVER, PORT)                                           # tuple of the server and port
-FORMAT = 'utf-8'                                                # format of the message
-DISCONNECT_MESSAGE = "!DISCONNECT"                              # message to disconnect
+def gettime():
+    return round(time.time() - start,2)
 
-client =socket.socket(socket.AF_INET, socket.SOCK_STREAM)       # create a socket object
-client.connect(ADDR)                                            # connect to the server
+HEADER = 64
+PORT = 5050
+SERVER = socket.gethostbyname(socket.gethostname())
+ADDR = (SERVER, PORT)
+FORMAT = 'utf-8'
+DISCONNECT_MESSAGE = "!DISCONNECT"
+
+client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+client.connect(ADDR)
 
 def send_string(msg):
     message = msg.encode(FORMAT)                                # encode the message
@@ -33,6 +40,15 @@ def send_bytes(msg):
     send_info += b' ' * (HEADER - len(send_info))           # add spaces to the length of the message to make it 64 bytes
     client.send(send_info)                                    # send the length of the message                             
     client.send(msg)                                        # send the message
+def ask_img():
+    msg_info = 'imgask'
+    client.send(msg_info.encode(FORMAT))
+    img_size = int(client.recv(64).decode(FORMAT))
+    print(f'{gettime()}: Server is sending an image of size <<{img_size}>>')
+    client.send('ok'.encode(FORMAT))
+    img_rec = client.recv(img_size)
+    print(f'{gettime()}:Received an image of size <<{len(img_rec)}>> from the server!')
+    return img_rec
 ########################### File Management ############################
 # Start with identifying the directory and folders within it
 folder =os.path.dirname(os.path.realpath(__file__))
@@ -40,6 +56,21 @@ flist = [0,0]
 flist[0] = [x[0] for x in os.walk(folder)]
 flist[1] = [x[1] for x in os.walk(folder)][0]
 flist[0].pop(0)
+# # Read the last folder to get the data - arguments file and values file
+
+# data_flist = [f[2] for f in os.walk(flist[0][-1])][0]
+# ArgumentsFile = os.path.join(flist[0][-1],data_flist[0])
+# ValuesFile = os.path.join(flist[0][-1],data_flist[1])
+
+# # Use csv reader to read the numerical data from those two files
+
+# with open(ArgumentsFile, 'r') as file:
+#     plotarguments = next(csv.reader(file))
+# plotarguments = [int(x) for x in plotarguments]
+
+# with open(ValuesFile, 'r') as file:
+#     plotvalues = next(csv.reader(file))
+# plotvalues = [int(y) for y in plotvalues]
 
 # create a list of chamber names 
 c_list = []
@@ -72,39 +103,82 @@ if chamber_sizes[2] == 0:
     sg.popup('No files from Chamber 3!')
     raise SystemExit()
 
-################################## Image reading ######################################
-
-# Define a function which opens an image file using Python Imaging Library
-def get_img_data(f, maxsize=(1600, 1000), first=False):
-    """Generate image data using PIL"""
-    img = Image.open(f)
-    img.thumbnail(maxsize)
-    if first:                     
-        bio = io.BytesIO()
-        img.save(bio, format="PNG")
-        del img
-        return bio.getvalue()
-    return ImageTk.PhotoImage(img)
-
-def image_to_bytes(image_path):
-    with Image.open(image_path) as image_file:
-        #image_file = image_file.resize((500,500))
-        image_bytes = io.BytesIO()
-        image_file.save(image_bytes, format='PNG')
-    return image_bytes.getvalue()
-##################################  Start reading data ######################################
-
+################################# The layout ##################################
 # active chamber index
+filename = os.path.join(os.getcwd(), 'Original Image Read\\waiting.jpg')
+image_elem = sg.Image(data=get_img_data(filename, first=True))
 active_chamber = 0
+c_list = []
+for i in range(20):
+    c_list.append('Chamber '+str(i+1))
 
-i = 1
+# Also get display elements. This is just for debugging (so that we can see what's going on)
+chamber_info_elementimg = sg.Text(text='Live video feed from Chamber {}'.format(active_chamber+1),expand_x=True,justification='center',font=('Calibri',30))
+chamber_info_elementplt = sg.Text(text='Graph of data from Chamber {}'.format(active_chamber+1),expand_x=True,justification='center',font=('Calibri',30))
+
+# define layout, show and read the form
+
+canvas_elem = sg.Canvas(size=(1200, 400),key='-CANVAS-',expand_x=True)
+imgcol = [[chamber_info_elementimg],[image_elem]]
+graphcol = [[chamber_info_elementplt],[canvas_elem]]
+
+leftcol = [
+    [sg.Listbox(values=c_list,font=('Calibri', 20), change_submits=True, size=(30, 20), key='listbox',expand_y=True)],
+    [sg.Button('Live view', size=(8, 2)), sg.Button('Graph', size=(8, 2)),sg.Button('Syringe control',size=(8,2))],
+]
+
+layout = [[sg.Column(leftcol,expand_x=True), sg.Column(imgcol, key='-COL1-',expand_x=True), sg.Column(graphcol, visible=False, key='-COL2-',expand_x=True)]]
+
+################################# The main loop ###################################
+graphing = False
+image_data = None
+window = sg.Window('Yeasy', layout, return_keyboard_events=True,size=(1920,1080),location=(0, 0), use_default_focus=False, finalize=True,keep_on_top=False)
 while True:
-    time.sleep(0.5)
-    if i >= chamber_sizes[active_chamber]:
-        i -= chamber_sizes[active_chamber]
-    filename = os.path.join(flist[0][active_chamber], fnames[active_chamber][i])
-    byte_im = image_to_bytes(filename)
-    #send_string(f'Image size of {i}: {len(byte_im)}')
-    send_bytes(byte_im)
-    print(f'Image number {i} of size {len(byte_im)} sent to the server!')
-    i+=1
+    # read the form, set the timeout in miliseconds
+    event, values = window.read(timeout=250)
+    #print(event, values)
+    # if the window closes - break the loop
+    if event == sg.WIN_CLOSED:
+        break
+    elif event in ('Live view'):
+        if not graphing:
+            pass
+        else:
+            graphing = False
+            #clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas)
+            window['-COL2-'].update(visible=False)
+            window['-COL1-'].update(visible=True)
+            window.maximize()
+            window['-COL1-'].expand(expand_x=True, expand_y=True, expand_row=False)
+    elif event in (sg.TIMEOUT_EVENT) and not graphing:
+        image_data = ask_img()
+        print(f'{gettime()}: Image data loaded: size <<{len(image_data)}>>')
+    # this statement will show the graph
+    # elif event == 'Graph':
+    #     graphing = True
+    #     window[f'-COL1-'].update(visible=False)
+    #     window[f'-COL2-'].update(visible=True)
+    #     figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(plotarguments,plotvalues))
+    #     window.maximize()
+    #     window['-COL2-'].expand(expand_x=True, expand_y=True, expand_row=False)
+    elif event == 'listbox':            # something from the listbox
+        active_chamber = c_list.index(values["listbox"][0])            # selected filename
+        filename = os.path.join(flist[0][active_chamber], fnames[active_chamber][0])  # read this file
+    elif event =='Syringe control':
+        syr_win_1 = syringewindow1()
+        syr_win_2 = syringewindow2(syr_win_1[0],syr_win_1[1])
+        #syringe_operation(syringecontrols)
+    # update window with new image
+    # update page display
+    if not graphing and image_data is not None:
+            print(f'{gettime()}: Trying to update image')
+            image_data = io.BytesIO(image_data)
+            image = Image.open(image_data)
+            bio = io.BytesIO()
+            image.save(bio, format='PNG')
+            image_elem.update(data=bio.getvalue())
+    elif graphing: 
+        chamber_info_elementplt.update('Graph of data from Chamber {}'.format(active_chamber+1))
+    print(f'{gettime()}: Updated window')
+# Close the window
+window.close()
