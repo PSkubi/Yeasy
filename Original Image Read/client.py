@@ -6,7 +6,6 @@ import os
 from PIL import Image, ImageTk
 import io
 import matplotlib.pyplot as plt
-import csv
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 HEADER = 64                                                     # the first message the client sends to the server will be the length of the message
@@ -29,7 +28,7 @@ def send_string(msg):
     client.send(message)                                        # send the message
 def send_bytes(msg):
     msg_info = str(len(msg))+'_byt'                          # get the info of the message   
-    print(f'Sent message info: {msg_info}') 
+    #print(f'Sent message info: {msg_info}') 
     send_info = msg_info.encode(FORMAT)                # encode the length of the message
     send_info += b' ' * (HEADER - len(send_info))           # add spaces to the length of the message to make it 64 bytes
     client.send(send_info)                                    # send the length of the message                             
@@ -88,9 +87,11 @@ def get_img_data(f, maxsize=(1600, 1000), first=False):
     return ImageTk.PhotoImage(img)
 
 def image_to_bytes(image_path):
-    with open(image_path, 'rb') as image_file:
-        image_bytes = io.BytesIO(image_file.read())
-        return image_bytes.getvalue()
+    with Image.open(image_path) as image_file:
+        #image_file = image_file.resize((500,500))
+        image_bytes = io.BytesIO()
+        image_file.save(image_bytes, format='PNG')
+    return image_bytes.getvalue()
 ##################################  Start reading data ######################################
 
 # active chamber index
@@ -98,7 +99,7 @@ active_chamber = 0
 
 i = 1
 while True:
-    time.sleep(1)
+    time.sleep(0.5)
     if i >= chamber_sizes[active_chamber]:
         i -= chamber_sizes[active_chamber]
     filename = os.path.join(flist[0][active_chamber], fnames[active_chamber][i])

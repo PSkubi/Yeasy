@@ -41,7 +41,7 @@ def handle_client(conn, addr):
             if 'img' in msg_info or 'str' in msg_info or 'byt' in msg_info and not msg_info == '':                                             # if the message is not empty, proceed
                 msg_info = msg_info.replace(' ','')                                 # split the message info: length and type
                 msg_info = msg_info.split('_')                                 # split the message info: length and type
-                print(f'Received message info: {msg_info}')
+                #print(f'Received message info: {msg_info}')
                 if msg_info[1] == 'str':
                     msg_length = int(msg_info[0])
                     msg = conn.recv(msg_length).decode(FORMAT)
@@ -77,28 +77,28 @@ def start():
         thread.start()
         print(f"[ACTIVE CONNECTIONS] {threading.active_count() - 1}")
 ########################### Syringe control windows ###################################
-def syringewindow():
+flowrate_units = ['µL/min', 'mL/min', 'µL/hr', 'mL/hr']
+def syringewindow1():
     layout = [
         [sg.Text('Do you want to use volume or duration control?')],
         [sg.Button('Volume', size=(8, 2)),sg.Button('Duration', size=(8, 2))],
         [sg.Button('Cancel', size=(8, 2))]
     ]
     syringewindow1 = sg.Window('Control type',layout,size=(600,400))
-    event, values = syringewindow1.read()
-    if event == sg.WIN_CLOSED or 'Cancel':
-        syringewindow1.close()
-        return []
-    if event=='Volume':
-        syringewindow1.close()
-        type = 'Volume'
-        measure_units = ['µL', 'mL', 'L']
-    elif event=='Duration':
-        syringewindow1.close()
-        type = 'Duration'
-        measure_units = ['minutes','hours']
-    else:
-        type = 'Close :)'
-    flowrate_units = ['µL/min', 'mL/min', 'µL/hr', 'mL/hr']
+    while True:
+        event, values = syringewindow1.read()
+        if event == 'Cancel': #sg.WIN_CLOSED or 'Cancel':
+            con_type = []
+            break
+        elif event=='Volume':
+            con_type = ['Volume',['µL', 'mL', 'L']]
+            break
+        elif event=='Duration':
+            con_type = ['Duration',['minutes','hours']]
+            break
+    syringewindow1.close()
+    return con_type
+def syringewindow2(type,measure_units):
     layout = [
         [sg.Text(f'You have chosen {type} control')],
         [[sg.Text('Syringe number:')],[sg.Input('',size=(10, 4),key='-Syringe no-')]],
@@ -107,14 +107,16 @@ def syringewindow():
         [sg.Button('Cancel', size=(8, 2)),sg.Button('Confirm',size=(8,2))]
     ]
     syringewindow2= sg.Window(f'Flow rate and {type} control',layout,size=(600,400))
-    event, values = syringewindow2.read()
-    if event == 'Cancel':
-        syringewindow2.close()
-        return []
-    elif event in ('Confirm'):
-        userinput = [type,int(values['-Syringe no-']),float(values['-Flow rate-']),float(values['-Control-']),str(values['-Flowrate units-']),str(values['-Control units-'])]
-        syringewindow2.close()
-        return userinput
+    while True:
+        event, values = syringewindow2.read()
+        if event == 'Cancel':
+            userinput = []  
+            break
+        elif event in ('Confirm'):
+            userinput = [type,int(values['-Syringe no-']),float(values['-Flow rate-']),float(values['-Control-']),str(values['-Flowrate units-']),str(values['-Control units-'])]
+            break
+    syringewindow2.close()
+    return userinput
 ################################# Plot setup #########################################
 # Start with identifying the directory and folders within it
 folder =os.path.dirname(os.path.realpath(__file__))
@@ -246,8 +248,8 @@ while True:
     #     active_chamber = c_list.index(values["listbox"][0])            # selected filename
     #     filename = os.path.join(flist[0][active_chamber], fnames[active_chamber][0])  # read this file
     elif event =='Syringe control':
-        syringecontrols = syringewindow()
-        syringe_operation(syringecontrols)
+        syr_win_1 = syringewindow1()
+        syr_win_2 = syringewindow2(syr_win_1[0],syr_win_1[1])
         
     # update window with new image
     # update page display
