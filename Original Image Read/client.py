@@ -16,7 +16,7 @@ start = time.time()
 def log(msg):
     print(f'{round(time.time() - start,2)}: {msg}')
 
-HEADER = 64
+HEADER = 32
 PORT = 5050
 SERVER = socket.gethostbyname(socket.gethostname())
 ADDR = (SERVER, PORT)
@@ -41,14 +41,19 @@ def send_bytes(msg):
     client.send(send_info)                                    # send the length of the message                             
     client.send(msg)                                        # send the message
 def ask_img():
-    msg_info = 'imgask'
-    client.send(msg_info.encode(FORMAT))
+    msg_info = 'imgask'.encode(FORMAT)
+    msg_info += b' ' * (HEADER - len(msg_info))
+    client.send(msg_info)
     img_size = int(client.recv(64).decode(FORMAT))
     log(f'Server is sending an image of size <<{img_size}>>')
     client.send('ok'.encode(FORMAT))
     img_rec = client.recv(img_size)
     log(f'Received an image of size <<{len(img_rec)}>> from the server!')
     return img_rec
+def change_chamber(chamber):
+    msg_info = 'chamber_'+str(chamber)
+    msg_info = msg_info.encode(FORMAT)
+    msg_info += b' ' * (HEADER - len(msg_info))
 ########################### File Management ############################
 # Start with identifying the directory and folders within it
 folder =os.path.dirname(os.path.realpath(__file__))
@@ -165,7 +170,8 @@ while True:
         window['-COL2-'].expand(expand_x=True, expand_y=True, expand_row=False)
     elif event == 'listbox':            # something from the listbox
         active_chamber = c_list.index(values["listbox"][0])            # selected filename
-        filename = os.path.join(flist[0][active_chamber], fnames[active_chamber][0])  # read this file
+        log(f'Changed active chamber to {active_chamber+1}')
+        change_chamber(active_chamber)
     elif event =='Syringe control':
         syr_win_1 = syringewindow1()
         syr_win_2 = syringewindow2(syr_win_1[0],syr_win_1[1])

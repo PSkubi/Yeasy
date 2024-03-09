@@ -13,8 +13,12 @@ import time
 from Image_reading import *
 from Syringe_control import *
 from Plot_setup import *
+start = time.time()
+
+def log(msg):
+    print(f'{round(time.time() - start,2)}: {msg}')
 ########################### SERVER SETUP ############################
-HEADER = 64
+HEADER = 32
 PORT = 5050
 #SERVER = '192.168.1.29'
 SERVER = socket.gethostbyname(socket.gethostname())
@@ -26,44 +30,50 @@ server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(ADDR)
 
 def handle_client(conn, addr):
-    print(f"[NEW CONNECTION] {addr} connected.")
+    log(f"[NEW CONNECTION] {addr} connected.")
     connected = True
     while connected:
         try:
             msg_info = conn.recv(HEADER).decode(FORMAT,errors='ignore')                    # receive and decode the message
-            if  'str' in msg_info or 'byt' in msg_info and not msg_info == '':                                             # if the message is not empty, proceed
-                msg_info = msg_info.replace(' ','')                                 # split the message info: length and type
-                msg_info = msg_info.split('_')                                 # split the message info: length and type
-                #print(f'Received message info: {msg_info}')
-                if msg_info[1] == 'str':
-                    msg_length = int(msg_info[0])
-                    msg = conn.recv(msg_length).decode(FORMAT)
-                    if msg == DISCONNECT_MESSAGE:
-                        connected = False
-                    print(f"[{addr}] {msg}")
-                elif msg_info[1] == 'byt':
-                    msg_length = int(msg_info[0]) 
-                    msg = conn.recv(msg_length)
-                    global image_num
-                    image_num+=1
-                    print(f'Received bytes: Image number {image_num},size {msg_length} bytes')
-                    global image
-                    image_data = io.BytesIO(msg)
-                    image = Image.open(image_data)
-                    conn.send(f'Received bytes: Image number {image_num},size {msg_length} bytes'.encode(FORMAT))
-                    #image.show()
-            elif 'imgask' in msg_info and not msg_info == '':
-                print(f'The server was asked for an image by {addr}')
-                msg_info = str(len(byte_im)).encode(FORMAT)
-                msg_info += b' ' * (HEADER - len(msg_info))
-                conn.send(msg_info)
-                if conn.recv(2).decode(FORMAT) == 'ok':
-                    print(f'Sending image to {addr}')
-                    conn.send(byte_im)
+            if msg_info != '':                                             # if the message is not empty, proceed
+                if  'str' in msg_info or 'byt' in msg_info:                                             # if the message is not empty, proceed
+                    msg_info = msg_info.replace(' ','')                                 # split the message info: length and type
+                    msg_info = msg_info.split('_')                                 # split the message info: length and type
+                    #log(f'Received message info: {msg_info}')
+                    if msg_info[1] == 'str':
+                        msg_length = int(msg_info[0])
+                        msg = conn.recv(msg_length).decode(FORMAT)
+                        if msg == DISCONNECT_MESSAGE:
+                            connected = False
+                        log(f"[{addr}] {msg}")
+                    elif msg_info[1] == 'byt':
+                        msg_length = int(msg_info[0]) 
+                        msg = conn.recv(msg_length)
+                        global image_num
+                        image_num+=1
+                        log(f'Received bytes: Image number {image_num},size {msg_length} bytes')
+                        global image
+                        image_data = io.BytesIO(msg)
+                        image = Image.open(image_data)
+                        conn.send(f'Received bytes: Image number {image_num},size {msg_length} bytes'.encode(FORMAT))
+                        #image.show()
+                elif 'imgask' in msg_info:
+                    log(f'The server was asked for an image by {addr}')
+                    msg_info = str(len(byte_im)).encode(FORMAT)
+                    msg_info += b' ' * (HEADER - len(msg_info))
+                    conn.send(msg_info)
+                    if conn.recv(2).decode(FORMAT) == 'ok':
+                        log(f'Sending image to {addr}')
+                        conn.send(byte_im)
+                elif 'chamber' in msg_info:
+                    msg_info = msg_info.split('_')
+                    log(f'Changing chamber to {msg_info[1]}')
+                    global active_chamber
+                    active_chamber = int(msg_info[1])
         except UnicodeDecodeError:
-            print('UnicodeDecodeError')
+            log('UnicodeDecodeError')
         except ConnectionResetError:
-            print(f"[CONNECTION LOST] {addr} disconnected.")
+            log(f"[CONNECTION LOST] {addr} disconnected.")
             connected = False
 
     conn.close()
@@ -72,7 +82,7 @@ def server_operations():
         conn, addr = server.accept()
         thread = threading.Thread(target=handle_client, args=(conn, addr))
         thread.start()
-        print(f"[ACTIVE CONNECTIONS] {threading.active_count() - 1}")
+        log(f"[ACTIVE CONNECTIONS] {threading.active_count() - 1}")
 
 ########################### File Management ############################
 # Start with identifying the directory and folders within it
@@ -121,9 +131,9 @@ c_list = []
 for i in range(20):
     c_list.append('Chamber '+str(i+1))
 
-print("Server is starting...")
+log("Server is starting...")
 server.listen()
-print(f"[LISTENING] Server is listening on {SERVER}")
+log(f"[LISTENING] Server is listening on {SERVER}")
 
 ################################# The main loop ###################################
 
@@ -136,7 +146,7 @@ image = None
 server_thread = threading.Thread(target=server_operations)
 server_thread.start()
 while True:
-    time.sleep(1)
+    time.sleep(0.25)
     if i >= chamber_sizes[active_chamber]:
        i -= chamber_sizes[active_chamber]
     filename = os.path.join(flist[0][active_chamber], fnames[active_chamber][i])
