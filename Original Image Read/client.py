@@ -14,15 +14,34 @@ start = time.time()
 
 def log(msg):
     print(f'{round(time.time() - start,2)}: {msg}')
-
+def setupwindow():
+    layout = [
+        [sg.Text(f'Please select the settings for the program')],
+        [[sg.Text('Server IP:')],[sg.Input(f'{socket.gethostbyname(socket.gethostname())}',size=(20, 10),key='-Server IP-')]],
+        [[sg.Text('Number of chambers')],[sg.Input('20',size=(20, 10),key='-Chamber no-')]],
+        [[sg.Text('Number of syringes')],[sg.Input('3',size=(20, 10),key='-Syringe no-')]],
+        [sg.Button('Cancel', size=(10,4)),sg.Button('Confirm',size=(10,4))]
+    ]
+    setupwindow= sg.Window(f'Program setup',layout,size=(400,300))
+    while True:
+        event, values = setupwindow.read()
+        if event == 'Cancel' or event == sg.WIN_CLOSED:
+            exit() 
+        elif event =='Confirm':
+            userinput = [str(values['-Server IP-']),int(values['-Chamber no-']),int(values['-Syringe no-'])]
+            break
+    setupwindow.close()
+    return userinput
+setup = setupwindow()
+log(f'Loaded setup: Server IP is {setup[0]}, number of chambers is {setup[1]}, number of syringes is {setup[2]}') 
 ########################## Constant values setup ############################
 HEADER = 32                                            # length of the header message
 PORT = 5050                                            # port number                                 
-SERVER = socket.gethostbyname(socket.gethostname())    # server IP address
+SERVER = setup[0] #SERVER = socket.gethostbyname(socket.gethostname())    # server IP address
 ADDR = (SERVER, PORT)                                  # address of the server
 FORMAT = 'utf-8'                                       # format of the message
 DISCONNECT_MESSAGE = "!DISCONNECT"                     # disconnect message       
-chamber_number = 20                                    # number of chambers                          
+chamber_number = setup[1]                              # number of chambers                          
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect(ADDR)
@@ -57,16 +76,7 @@ def change_chamber(chamber):
     msg_info += b' ' * (HEADER - len(msg_info))
     client.send(msg_info)
 ########################### File Management ############################
-# Start with identifying the directory and folders within it
-folder =os.path.dirname(os.path.realpath(__file__))
-flist = [0,0]
-flist[0] = [x[0] for x in os.walk(folder)]
-flist[1] = [x[1] for x in os.walk(folder)][0]
-flist[0].pop(0)
-# # Read the last folder to get the data - arguments file and values file
-
-data_flist = [f[2] for f in os.walk(flist[0][-1])][0]
-#ArgumentsFile = os.path.join(flist[0][-1],data_flist[0])
+# Load the arguments and values from the csv files
 Arguments_file = os.path.join(os.getcwd(), 'Original Image Read\\Data\\Chamber 1 data\\YeastDataArguments.csv')
 log(f'Loaded arguments file: {Arguments_file}')
 #ValuesFile = os.path.join(flist[0][-1],data_flist[1])
@@ -89,13 +99,9 @@ for i in range(chamber_number):
     c_list.append('Chamber '+str(i+1))
 
 ################################# The layout ##################################
-# active chamber index
-filename = os.path.join(os.getcwd(), 'Original Image Read\\waiting.jpg')
-image_elem = sg.Image(data=get_img_data(filename, first=True))
+filename = os.path.join(os.getcwd(), 'Original Image Read\\waiting.jpg')    # Load the waiting image
+image_elem = sg.Image(data=get_img_data(filename, first=True))              # Create the image element
 active_chamber = 0
-c_list = []
-for i in range(20):
-    c_list.append('Chamber '+str(i+1))
 
 # Also get display elements. This is just for debugging (so that we can see what's going on)
 chamber_info_elementimg = sg.Text(text='Live video feed from Chamber {}'.format(active_chamber+1),expand_x=True,justification='center',font=('Calibri',30))
