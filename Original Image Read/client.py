@@ -76,32 +76,34 @@ def change_chamber(chamber):
     msg_info += b' ' * (HEADER - len(msg_info))
     client.send(msg_info)
 ########################### File Management ############################
-# Load the arguments and values from the csv files
-Arguments_file = os.path.join(os.getcwd(), 'Original Image Read\\Data\\Chamber 1 data\\YeastDataArguments.csv')
-log(f'Loaded arguments file: {Arguments_file}')
-#ValuesFile = os.path.join(flist[0][-1],data_flist[1])
-Values_file = os.path.join(os.getcwd(), 'Original Image Read\\Data\\Chamber 1 data\\YeastDataValues.csv')
-log(f'Loaded values file: {Values_file}')
-
-# Use csv reader to read the numerical data from those two files
-
-with open(Arguments_file, 'r') as file:
-    plotarguments = next(csv.reader(file))
-plotarguments = [int(x) for x in plotarguments]
-
-with open(Values_file, 'r') as file:
-    plotvalues = next(csv.reader(file))
-plotvalues = [int(y) for y in plotvalues]
-
+active_chamber = 0
 # create a list of chamber names 
 c_list = []
 for i in range(chamber_number):
     c_list.append('Chamber '+str(i+1))
+# Load the arguments and values from the csv files
+Arguments_files = []
+Values_files = []
+for i in range(3):
+    Arguments_files.append(os.path.join(os.getcwd(), f'Original Image Read\\Data\\Chamber {i+1} data\\YeastDataArguments.csv'))
+    Values_files.append(os.path.join(os.getcwd(), f'Original Image Read\\Data\\Chamber {i+1} data\\YeastDataValues.csv'))
+log(f'Loaded arguments files: {Arguments_files}')
+log(f'Loaded values file: {Values_files}')
+
+# Use csv reader to read the numerical data from those two files
+def read_datafiles():
+    global plotarguments
+    global plotvalues
+    with open(Arguments_files[active_chamber], 'r') as file:
+        plotarguments = next(csv.reader(file))
+    plotarguments = [int(x) for x in plotarguments]
+    with open(Values_files[active_chamber], 'r') as file:
+        plotvalues = next(csv.reader(file))
+    plotvalues = [int(y) for y in plotvalues]
 
 ################################# The layout ##################################
 filename = os.path.join(os.getcwd(), 'Original Image Read\\waiting.jpg')    # Load the waiting image
 image_elem = sg.Image(data=get_img_data(filename, first=True))              # Create the image element
-active_chamber = 0
 
 # Also get display elements. This is just for debugging (so that we can see what's going on)
 chamber_info_elementimg = sg.Text(text='Live video feed from Chamber {}'.format(active_chamber+1),expand_x=True,justification='center',font=('Calibri',30))
@@ -122,53 +124,51 @@ layout = [[sg.Column(leftcol,expand_x=True), sg.Column(imgcol, key='-COL1-',expa
 
 ################################# The main loop ###################################
 graphing = False
-image_data = None
 window = sg.Window('Yeasy', layout, return_keyboard_events=True,size=(1920,1080),location=(0, 0), use_default_focus=False, finalize=True,keep_on_top=False)
 while True:
-    # read the form, set the timeout in miliseconds
-    event, values = window.read(timeout=250)
-    # if the window closes - break the loop
-    if event == sg.WIN_CLOSED:
+    event, values = window.read(timeout=250)                            # read the form, set the timeout in miliseconds
+    if event == sg.WIN_CLOSED:                                          # if the window closes - break the loop
         break
-    elif event in ('Live view'):
-        if not graphing:
-            pass
-        else:
-            graphing = False
-            #clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas)
-            window['-COL2-'].update(visible=False)
-            window['-COL1-'].update(visible=True)
-            window.maximize()
-            window['-COL1-'].expand(expand_x=True, expand_y=True, expand_row=False)
+    elif event in ('Live view') and graphing:                           # the live view button returns to the live view                                        
+        graphing = False
+        clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas)
+        window['-COL2-'].update(visible=False)
+        window['-COL1-'].update(visible=True)
+        window.maximize()
+        window['-COL1-'].expand(expand_x=True, expand_y=True, expand_row=False)
     elif event in (sg.TIMEOUT_EVENT) and not graphing:
         image_data = ask_img()
         log(f'Image data loaded: size <<{len(image_data)}>>')
-    # this statement will show the graph
-    elif event == 'Graph':
+    elif event == 'Graph':                                              # the graph button opens the graph    
         graphing = True
+        read_datafiles()
         window[f'-COL1-'].update(visible=False)
         window[f'-COL2-'].update(visible=True)
         figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(plotarguments,plotvalues))
         window.maximize()
         window['-COL2-'].expand(expand_x=True, expand_y=True, expand_row=False)
-    elif event == 'listbox':            # something from the listbox
-        active_chamber = c_list.index(values["listbox"][0])            # selected filename
-        log(f'Changed active chamber to {active_chamber+1}')
-        change_chamber(active_chamber)
-    elif event =='Syringe control':
-        syr_win_1 = syringewindow1()
-        syr_win_2 = syringewindow2(syr_win_1[0],syr_win_1[1])
-        log(syringe_operation(syr_win_2))
-    # update window with new image
-    # update page display
-    if not graphing and image_data is not None:
-            log(f'Trying to update image of type {type(image_data)}')
-            if isinstance(image_data, bytes):
-                image_data = io.BytesIO(image_data)
-            image = Image.open(image_data)
-            bio = io.BytesIO()
-            image.save(bio, format='PNG')
-            image_elem.update(data=bio.getvalue())
+    elif event == 'listbox':                                            # something from the list of chambers
+        active_chamber = c_list.index(values["listbox"][0])             # change the active chamber
+        log(f'Changed active chamber to {active_chamber+1}')            # log the change
+        change_chamber(active_chamber)                                  # send the change to the server
+        if graphing:
+            read_datafiles()
+            clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas)
+            figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(plotarguments,plotvalues))
+            window['-CANVAS-'].expand(expand_x=True, expand_y=True, expand_row=False)
+    elif event =='Syringe control':                                     # if the user clicks on the syringe control button
+        syr_win_1 = syringewindow1()                                    # open the first syringe control window
+        syr_win_2 = syringewindow2(syr_win_1[0],syr_win_1[1])           # open the second syringe control window
+        log(syringe_operation(syr_win_2))                               # log the operation of the syringes
+    if not graphing:                                                    # image update 
+        chamber_info_elementplt.update('Live video feed from Chamber {}'.format(active_chamber+1))           #                 
+        log(f'Trying to update image of type {type(image_data)}')       # log the attempt
+        if isinstance(image_data, bytes):                               # if the image data is bytes, change it to bytes IO
+            image_data = io.BytesIO(image_data)
+        image = Image.open(image_data)                                  # open the image
+        bio = io.BytesIO()                                              # create a bytes IO object
+        image.save(bio, format='PNG')                                   # save the image to the bytes IO object
+        image_elem.update(data=bio.getvalue())                          # update the image element
     elif graphing: 
         chamber_info_elementplt.update('Graph of data from Chamber {}'.format(active_chamber+1))
     log('Updated window')
