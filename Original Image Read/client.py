@@ -13,8 +13,8 @@ from Image_reading import *
 from Syringe_control import *
 start = time.time()
 
-def gettime():
-    return round(time.time() - start,2)
+def log(msg):
+    print(f'{round(time.time() - start,2)}: {msg}')
 
 HEADER = 64
 PORT = 5050
@@ -35,7 +35,7 @@ def send_string(msg):
     client.send(message)                                        # send the message
 def send_bytes(msg):
     msg_info = str(len(msg))+'_byt'                          # get the info of the message   
-    #print(f'Sent message info: {msg_info}') 
+    log(f'Sent message info: {msg_info}') 
     send_info = msg_info.encode(FORMAT)                # encode the length of the message
     send_info += b' ' * (HEADER - len(send_info))           # add spaces to the length of the message to make it 64 bytes
     client.send(send_info)                                    # send the length of the message                             
@@ -44,10 +44,10 @@ def ask_img():
     msg_info = 'imgask'
     client.send(msg_info.encode(FORMAT))
     img_size = int(client.recv(64).decode(FORMAT))
-    print(f'{gettime()}: Server is sending an image of size <<{img_size}>>')
+    log(f'Server is sending an image of size <<{img_size}>>')
     client.send('ok'.encode(FORMAT))
     img_rec = client.recv(img_size)
-    print(f'{gettime()}:Received an image of size <<{len(img_rec)}>> from the server!')
+    log(f'Received an image of size <<{len(img_rec)}>> from the server!')
     return img_rec
 ########################### File Management ############################
 # Start with identifying the directory and folders within it
@@ -58,19 +58,22 @@ flist[1] = [x[1] for x in os.walk(folder)][0]
 flist[0].pop(0)
 # # Read the last folder to get the data - arguments file and values file
 
-# data_flist = [f[2] for f in os.walk(flist[0][-1])][0]
-# ArgumentsFile = os.path.join(flist[0][-1],data_flist[0])
-# ValuesFile = os.path.join(flist[0][-1],data_flist[1])
+data_flist = [f[2] for f in os.walk(flist[0][-1])][0]
+#ArgumentsFile = os.path.join(flist[0][-1],data_flist[0])
+Arguments_file = os.path.join(os.getcwd(), 'Original Image Read\\Data\\Chamber 1 data\\YeastDataArguments.csv')
+log(f'Loaded arguments file: {Arguments_file}')
+#ValuesFile = os.path.join(flist[0][-1],data_flist[1])
+Values_file = os.path.join(os.getcwd(), 'Original Image Read\\Data\\Chamber 1 data\\YeastDataValues.csv')
+log(f'Loaded values file: {Values_file}')
+# Use csv reader to read the numerical data from those two files
 
-# # Use csv reader to read the numerical data from those two files
+with open(Arguments_file, 'r') as file:
+    plotarguments = next(csv.reader(file))
+plotarguments = [int(x) for x in plotarguments]
 
-# with open(ArgumentsFile, 'r') as file:
-#     plotarguments = next(csv.reader(file))
-# plotarguments = [int(x) for x in plotarguments]
-
-# with open(ValuesFile, 'r') as file:
-#     plotvalues = next(csv.reader(file))
-# plotvalues = [int(y) for y in plotvalues]
+with open(Values_file, 'r') as file:
+    plotvalues = next(csv.reader(file))
+plotvalues = [int(y) for y in plotvalues]
 
 # create a list of chamber names 
 c_list = []
@@ -136,7 +139,6 @@ window = sg.Window('Yeasy', layout, return_keyboard_events=True,size=(1920,1080)
 while True:
     # read the form, set the timeout in miliseconds
     event, values = window.read(timeout=250)
-    #print(event, values)
     # if the window closes - break the loop
     if event == sg.WIN_CLOSED:
         break
@@ -152,15 +154,15 @@ while True:
             window['-COL1-'].expand(expand_x=True, expand_y=True, expand_row=False)
     elif event in (sg.TIMEOUT_EVENT) and not graphing:
         image_data = ask_img()
-        print(f'{gettime()}: Image data loaded: size <<{len(image_data)}>>')
+        log(f'Image data loaded: size <<{len(image_data)}>>')
     # this statement will show the graph
-    # elif event == 'Graph':
-    #     graphing = True
-    #     window[f'-COL1-'].update(visible=False)
-    #     window[f'-COL2-'].update(visible=True)
-    #     figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(plotarguments,plotvalues))
-    #     window.maximize()
-    #     window['-COL2-'].expand(expand_x=True, expand_y=True, expand_row=False)
+    elif event == 'Graph':
+        graphing = True
+        window[f'-COL1-'].update(visible=False)
+        window[f'-COL2-'].update(visible=True)
+        figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(plotarguments,plotvalues))
+        window.maximize()
+        window['-COL2-'].expand(expand_x=True, expand_y=True, expand_row=False)
     elif event == 'listbox':            # something from the listbox
         active_chamber = c_list.index(values["listbox"][0])            # selected filename
         filename = os.path.join(flist[0][active_chamber], fnames[active_chamber][0])  # read this file
@@ -171,7 +173,7 @@ while True:
     # update window with new image
     # update page display
     if not graphing and image_data is not None:
-            print(f'{gettime()}: Trying to update image')
+            log('Trying to update image')
             image_data = io.BytesIO(image_data)
             image = Image.open(image_data)
             bio = io.BytesIO()
@@ -179,6 +181,6 @@ while True:
             image_elem.update(data=bio.getvalue())
     elif graphing: 
         chamber_info_elementplt.update('Graph of data from Chamber {}'.format(active_chamber+1))
-    print(f'{gettime()}: Updated window')
+    log('Updated window')
 # Close the window
 window.close()

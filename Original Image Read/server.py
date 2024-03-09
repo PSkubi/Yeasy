@@ -73,14 +73,7 @@ def server_operations():
         thread = threading.Thread(target=handle_client, args=(conn, addr))
         thread.start()
         print(f"[ACTIVE CONNECTIONS] {threading.active_count() - 1}")
-# def start():
-#     server.listen()
-#     print(f"[LISTENING] Server is listening on {SERVER}")
-#     while True:
-#         conn, addr = server.accept()
-#         thread = threading.Thread(target=handle_client, args=(conn, addr))
-#         thread.start()
-#         print(f"[ACTIVE CONNECTIONS] {threading.active_count() - 1}")
+
 ########################### File Management ############################
 # Start with identifying the directory and folders within it
 folder =os.path.dirname(os.path.realpath(__file__))
@@ -128,23 +121,6 @@ c_list = []
 for i in range(20):
     c_list.append('Chamber '+str(i+1))
 
-# # Also get display elements. This is just for debugging (so that we can see what's going on)
-# chamber_info_elementimg = sg.Text(text='Live video feed from Chamber {}'.format(active_chamber+1),expand_x=True,justification='center',font=('Calibri',30))
-# chamber_info_elementplt = sg.Text(text='Graph of data from Chamber {}'.format(active_chamber+1),expand_x=True,justification='center',font=('Calibri',30))
-
-# # define layout, show and read the form
-
-# canvas_elem = sg.Canvas(size=(1200, 400),key='-CANVAS-',expand_x=True)
-# imgcol = [[chamber_info_elementimg],[image_elem]]
-# graphcol = [[chamber_info_elementplt],[canvas_elem]]
-
-# leftcol = [
-#     [sg.Listbox(values=c_list,font=('Calibri', 20), change_submits=True, size=(30, 20), key='listbox',expand_y=True)],
-#     [sg.Button('Live view', size=(8, 2)), sg.Button('Graph', size=(8, 2)),sg.Button('Syringe control',size=(8,2))],
-# ]
-
-# layout = [[sg.Column(leftcol,expand_x=True), sg.Column(imgcol, key='-COL1-',expand_x=True), sg.Column(graphcol, visible=False, key='-COL2-',expand_x=True)]]
-
 print("Server is starting...")
 server.listen()
 print(f"[LISTENING] Server is listening on {SERVER}")
@@ -166,48 +142,3 @@ while True:
     filename = os.path.join(flist[0][active_chamber], fnames[active_chamber][i])
     byte_im = image_to_bytes(filename)
     i+=1
-# window = sg.Window('Yeasy', layout, return_keyboard_events=True,size=(1920,1080),location=(0, 0), use_default_focus=False, finalize=True,keep_on_top=False)
-# window.maximize()
-# while True:
-#     # read the form, set the timeout in miliseconds
-#     event, values = window.read(timeout=500)
-#     # if the window closes - break the loop
-#     if event == sg.WIN_CLOSED:
-#         break
-#     elif event in ('Live view'):
-#         if not graphing:
-#             pass
-#         else:
-#             graphing = False
-#             clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas)
-#             window['-COL2-'].update(visible=False)
-#             window['-COL1-'].update(visible=True)
-#             window.maximize()
-#             window['-COL1-'].expand(expand_x=True, expand_y=True, expand_row=False)
-#     #this statement will show the graph
-#     elif event == 'Graph':
-#         graphing = True
-#         window[f'-COL1-'].update(visible=False)
-#         window[f'-COL2-'].update(visible=True)
-#         figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(plotarguments,plotvalues))
-#         window.maximize()
-#         window['-COL2-'].expand(expand_x=True, expand_y=True, expand_row=False)
-#     # elif event == 'listbox':            # something from the listbox
-#     #     active_chamber = c_list.index(values["listbox"][0])            # selected filename
-#     #     filename = os.path.join(flist[0][active_chamber], fnames[active_chamber][0])  # read this file
-#     elif event =='Syringe control':
-#         syr_win_1 = syringewindow1()
-#         syr_win_2 = syringewindow2(syr_win_1[0],syr_win_1[1])
-        
-#     # update window with new image
-#     # update page display
-#     if not graphing:
-#         if not image == None:
-#             bio = io.BytesIO()
-#             image.save(bio, format='PNG')
-#             image_elem.update(data=bio.getvalue())
-#     #     chamber_info_elementimg.update('Live video feed from Chamber {}'.format(active_chamber+1))
-#     # else: 
-#     #     chamber_info_elementplt.update('Graph of data from Chamber {}'.format(active_chamber+1))
-# # Close the window
-# window.close()
