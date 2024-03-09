@@ -54,6 +54,7 @@ def change_chamber(chamber):
     msg_info = 'chamber_'+str(chamber)
     msg_info = msg_info.encode(FORMAT)
     msg_info += b' ' * (HEADER - len(msg_info))
+    client.send(msg_info)
 ########################### File Management ############################
 # Start with identifying the directory and folders within it
 folder =os.path.dirname(os.path.realpath(__file__))
@@ -179,8 +180,9 @@ while True:
     # update window with new image
     # update page display
     if not graphing and image_data is not None:
-            log('Trying to update image')
-            image_data = io.BytesIO(image_data)
+            log(f'Trying to update image of type {type(image_data)}')
+            if isinstance(image_data, bytes):
+                image_data = io.BytesIO(image_data)
             image = Image.open(image_data)
             bio = io.BytesIO()
             image.save(bio, format='PNG')

@@ -19,4 +19,5 @@ def image_to_bytes(image_path):
         #image_file = image_file.resize((500,500))
         image_bytes = io.BytesIO()
         image_file.save(image_bytes, format='PNG')
-    return image_bytes.getvalue()
+        image_bytes = image_bytes.getvalue()
+    return image_bytes
