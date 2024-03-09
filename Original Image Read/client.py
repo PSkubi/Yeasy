@@ -1,6 +1,5 @@
 import socket
 import time
-import time
 import PySimpleGUI as sg
 import os
 from PIL import Image, ImageTk
@@ -16,30 +15,32 @@ start = time.time()
 def log(msg):
     print(f'{round(time.time() - start,2)}: {msg}')
 
-HEADER = 32
-PORT = 5050
-SERVER = socket.gethostbyname(socket.gethostname())
-ADDR = (SERVER, PORT)
-FORMAT = 'utf-8'
-DISCONNECT_MESSAGE = "!DISCONNECT"
+########################## Constant values setup ############################
+HEADER = 32                                            # length of the header message
+PORT = 5050                                            # port number                                 
+SERVER = socket.gethostbyname(socket.gethostname())    # server IP address
+ADDR = (SERVER, PORT)                                  # address of the server
+FORMAT = 'utf-8'                                       # format of the message
+DISCONNECT_MESSAGE = "!DISCONNECT"                     # disconnect message       
+chamber_number = 20                                    # number of chambers                          
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect(ADDR)
-
+########################## Sending data to the server ############################
 def send_string(msg):
-    message = msg.encode(FORMAT)                                # encode the message
-    msg_info = str(len(message))+'_str'                          # get the info of the message    
+    message = msg.encode(FORMAT)                       # encode the message
+    msg_info = str(len(message))+'_str'                # get the info of the message    
     send_info = msg_info.encode(FORMAT)                # encode the length of the message
-    send_info += b' ' * (HEADER - len(send_info))           # add spaces to the length of the message to make it 64 bytes
-    client.send(send_info)                                    # send the length of the message                             
-    client.send(message)                                        # send the message
+    send_info += b' ' * (HEADER - len(send_info))      # add spaces to the length of the message to make it 32 bytes
+    client.send(send_info)                             # send the length of the message                             
+    client.send(message)                               # send the message
 def send_bytes(msg):
-    msg_info = str(len(msg))+'_byt'                          # get the info of the message   
+    msg_info = str(len(msg))+'_byt'                    # get the info of the message   
     log(f'Sent message info: {msg_info}') 
     send_info = msg_info.encode(FORMAT)                # encode the length of the message
-    send_info += b' ' * (HEADER - len(send_info))           # add spaces to the length of the message to make it 64 bytes
-    client.send(send_info)                                    # send the length of the message                             
-    client.send(msg)                                        # send the message
+    send_info += b' ' * (HEADER - len(send_info))      # add spaces to the length of the message to make it 64 bytes
+    client.send(send_info)                             # send the length of the message                             
+    client.send(msg)                                   # send the message
 def ask_img():
     msg_info = 'imgask'.encode(FORMAT)
     msg_info += b' ' * (HEADER - len(msg_info))
@@ -71,6 +72,7 @@ log(f'Loaded arguments file: {Arguments_file}')
 #ValuesFile = os.path.join(flist[0][-1],data_flist[1])
 Values_file = os.path.join(os.getcwd(), 'Original Image Read\\Data\\Chamber 1 data\\YeastDataValues.csv')
 log(f'Loaded values file: {Values_file}')
+
 # Use csv reader to read the numerical data from those two files
 
 with open(Arguments_file, 'r') as file:
@@ -83,34 +85,8 @@ plotvalues = [int(y) for y in plotvalues]
 
 # create a list of chamber names 
 c_list = []
-for i in range(20):
+for i in range(chamber_number):
     c_list.append('Chamber '+str(i+1))
-c_flist = [os.listdir(flist[0][0]), os.listdir(flist[0][1]), os.listdir(flist[0][2])]
-
-chamber_sizes = [len(c_flist[0]), len(c_flist[1]), len(c_flist[2])]
-
-# Which types of images are supported:
-img_types = (".png", ".jpg", "jpeg", ".tiff", ".bmp")
-
-# create sub list of image files (no wrong file types)
-
-fnames = [0,0,0] # List storing the names of image files
-fnames[0] = [f for f in c_flist[0] if f.lower().endswith(img_types)]
-
-fnames[1] = [f for f in c_flist[1] if f.lower().endswith(img_types)]
-
-fnames[2] = [f for f in c_flist[2] if f.lower().endswith(img_types)]
-
-# If there are no suitable images, throw a popup
-if chamber_sizes[0] == 0:
-    sg.popup('No files from Chamber 1!')
-    raise SystemExit()
-if chamber_sizes[1] == 0:
-    sg.popup('No files from Chamber 2!')
-    raise SystemExit()
-if chamber_sizes[2] == 0:
-    sg.popup('No files from Chamber 3!')
-    raise SystemExit()
 
 ################################# The layout ##################################
 # active chamber index
