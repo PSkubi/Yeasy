@@ -24,6 +24,7 @@ SERVER = socket.gethostbyname(socket.gethostname())
 ADDR = (SERVER, PORT)
 FORMAT = 'utf-8'
 DISCONNECT_MESSAGE = "!DISCONNECT"
+control_dict={0:'Volume',1:'Duration',2:'µL', 3:'mL', 4:'L',5:'minutes',6:'hours',7:'µL/min',8:'mL/min',9:'µL/hr', 10:'mL/hr'} # dictionary for the control type encoding
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(ADDR)
@@ -77,6 +78,9 @@ def handle_client(conn, addr):
                     msg_info = msg_info.replace(' ','')
                     msg_info = msg_info.split('_')
                     msg_info = msg_info[1:]
+                    msg_info[0] = control_dict[int(msg_info[0])]
+                    msg_info[4] = control_dict[int(msg_info[4])]
+                    msg_info[5] = control_dict[int(msg_info[5])]
                     syringe_operation(msg_info)
                     log(f'The server received data for the syringe operation: {syringe_operation(msg_info)}')
         except UnicodeDecodeError:

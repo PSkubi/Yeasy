@@ -35,50 +35,52 @@ def setupwindow():
 setup = setupwindow()
 log(f'Loaded setup: Server IP is {setup[0]}, number of chambers is {setup[1]}, number of syringes is {setup[2]}') 
 ########################## Constant values setup ############################
-HEADER = 32                                            # length of the header message
-PORT = 5050                                            # port number                                 
-SERVER = setup[0] #SERVER = socket.gethostbyname(socket.gethostname())    # server IP address
-ADDR = (SERVER, PORT)                                  # address of the server
-FORMAT = 'utf-8'                                       # format of the message
-DISCONNECT_MESSAGE = "!DISCONNECT"                     # disconnect message       
-chamber_number = int(setup[1])                           # number of chambers                          
-syringe_number = int(setup[2])                               # number of syringes
+HEADER = 32                                             # length of the header message
+PORT = 5050                                             # port number                                 
+SERVER = setup[0]                                       # server IP address
+ADDR = (SERVER, PORT)                                   # address of the server
+FORMAT = 'utf-8'                                        # format of the message
+DISCONNECT_MESSAGE = "!DISCONNECT"                      # disconnect message       
+chamber_number = int(setup[1])                          # number of chambers                          
+syringe_number = int(setup[2])                          # number of syringes
+control_dict={'Volume':0,'Duration':1,'µL':2, 'mL':3, 'L':4,'minutes':5,'hours':6,'µL/min':7, 'mL/min':8, 'µL/hr':9, 'mL/hr':10} # dictionary for the control type encoding
 
-client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client.connect(ADDR)
+client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # create a client socket
+client.connect(ADDR)                                        # connect to the server
 ########################## Sending data to the server ############################
 def send_string(msg):
-    message = msg.encode(FORMAT)                       # encode the message
-    msg_info = str(len(message))+'_str'                # get the info of the message    
-    send_info = msg_info.encode(FORMAT)                # encode the length of the message
-    send_info += b' ' * (HEADER - len(send_info))      # add spaces to the length of the message to make it 32 bytes
-    client.send(send_info)                             # send the length of the message                             
-    client.send(message)                               # send the message
+    message = msg.encode(FORMAT)                        # encode the message
+    msg_info = str(len(message))+'_str'                 # get the info of the message    
+    send_info = msg_info.encode(FORMAT)                 # encode the length of the message
+    send_info += b' ' * (HEADER - len(send_info))       # add spaces to the length of the message to make it 32 bytes
+    client.send(send_info)                              # send the length of the message                             
+    client.send(message)                                # send the message
 def send_bytes(msg):
-    msg_info = str(len(msg))+'_byt'                    # get the info of the message   
+    msg_info = str(len(msg))+'_byt'                     # get the info of the message   
     log(f'Sent message info: {msg_info}') 
-    send_info = msg_info.encode(FORMAT)                # encode the length of the message
-    send_info += b' ' * (HEADER - len(send_info))      # add spaces to the length of the message to make it 64 bytes
-    client.send(send_info)                             # send the length of the message                             
-    client.send(msg)                                   # send the message
+    send_info = msg_info.encode(FORMAT)                 # encode the length of the message
+    send_info += b' ' * (HEADER - len(send_info))       # add spaces to the length of the message to make it 32 bytes
+    client.send(send_info)                              # send the length of the message                             
+    client.send(msg)                                    # send the message
 def ask_img():
-    msg_info = 'imgask'.encode(FORMAT)
-    msg_info += b' ' * (HEADER - len(msg_info))
-    client.send(msg_info)
-    img_size = int(client.recv(64).decode(FORMAT))
+    msg_info = 'imgask'.encode(FORMAT)                  # encode the 'imageask' string
+    msg_info += b' ' * (HEADER - len(msg_info))         # add spaces to the length of the message to make it 32 bytes
+    client.send(msg_info)                               # send the header containing 'imgask'
+    img_size = int(client.recv(HEADER).decode(FORMAT))  # receive the size of the image 
     log(f'Server is sending an image of size <<{img_size}>>')
-    client.send('ok'.encode(FORMAT))
-    img_rec = client.recv(img_size)
+    client.send('ok'.encode(FORMAT))                    # send the 'ok' message to the server
+    img_rec = client.recv(img_size)                     # receive the image
     log(f'Received an image of size <<{len(img_rec)}>> from the server!')
     return img_rec
-def change_chamber(chamber):
-    msg_info = 'chamber_'+str(chamber)
-    msg_info = msg_info.encode(FORMAT)
-    msg_info += b' ' * (HEADER - len(msg_info))
+def change_chamber(number):
+    msg_info = f'chamber_{number}'.encode(FORMAT)       # encode the 'chamber_{number}' string)              
+    msg_info += b' ' * (HEADER - len(msg_info))         # add spaces to the length of the message to make it 32 bytes
     client.send(msg_info)
-def send_syringe_control(controltype,syringeno,flowrate,control,flowrate_units,control_units):
-    msg = f'syr_{controltype}_{syringeno}_{flowrate}_{control}_{flowrate_units}_{control_units}'
-    msg = msg.encode(FORMAT)
+def send_syringe_control(control_list):
+    control_list[0] = control_dict[control_list[0]]
+    control_list[4] = control_dict[control_list[4]]
+    control_list[5] = control_dict[control_list[5]]
+    msg = f'syr_{control_list[0]}_{control_list[1]}_{control_list[2]}_{control_list[3]}_{control_list[4]}_{control_list[5]}'.encode(FORMAT)
     msg += b' ' * (HEADER - len(msg))
     client.send(msg)
 ########################### File Management ############################
@@ -174,10 +176,10 @@ while True:
     elif event =='Syringe control':                                     # if the user clicks on the syringe control button
         syr_win_1 = syringewindow1()                                    # open the first syringe control window
         if syr_win_1 != []:
-            syr_win_2 = syringewindow2(syr_win_1[0],syr_win_1[1],syringe_number)       # open the second syringe control window
-            log(f'The user passed syringe control: {syringe_operation(syr_win_2)}')   # log the operation of the syringes
-            if syringe_operation(syr_win_2) != ('None',0,0,0,0,0):                   # if the user actually selected something
-                send_syringe_control(*syr_win_2)                            # send the operation to the server
+            syr_win_2 = syringewindow2(syr_win_1[0],syr_win_1[1],syringe_number)        # open the second syringe control window
+            log(f'The user passed syringe control: {syringe_operation(syr_win_2)}')     # log the operation of the syringes
+            if syringe_operation(syr_win_2) != ('None',0,0,0,0,0):                      # if the user actually selected something
+                send_syringe_control(syr_win_2)                        # send the operation to the server
     if not graphing:                                                    # image update 
         chamber_info_img.update('Live video feed from Chamber {}'.format(active_chamber+1))           #                 
         log(f'Trying to update image of type {type(image_data)}')       # log the attempt
