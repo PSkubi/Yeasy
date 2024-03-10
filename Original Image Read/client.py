@@ -41,7 +41,8 @@ SERVER = setup[0] #SERVER = socket.gethostbyname(socket.gethostname())    # serv
 ADDR = (SERVER, PORT)                                  # address of the server
 FORMAT = 'utf-8'                                       # format of the message
 DISCONNECT_MESSAGE = "!DISCONNECT"                     # disconnect message       
-chamber_number = setup[1]                              # number of chambers                          
+chamber_number = int(setup[1])                           # number of chambers                          
+syringe_number = int(setup[2])                               # number of syringes
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect(ADDR)
@@ -173,9 +174,10 @@ while True:
     elif event =='Syringe control':                                     # if the user clicks on the syringe control button
         syr_win_1 = syringewindow1()                                    # open the first syringe control window
         if syr_win_1 != []:
-            syr_win_2 = syringewindow2(syr_win_1[0],syr_win_1[1])       # open the second syringe control window
+            syr_win_2 = syringewindow2(syr_win_1[0],syr_win_1[1],syringe_number)       # open the second syringe control window
             log(f'The user passed syringe control: {syringe_operation(syr_win_2)}')   # log the operation of the syringes
-            send_syringe_control(*syr_win_2)                            # send the operation to the server
+            if syringe_operation(syr_win_2) != ('None',0,0,0,0,0):                   # if the user actually selected something
+                send_syringe_control(*syr_win_2)                            # send the operation to the server
     if not graphing:                                                    # image update 
         chamber_info_img.update('Live video feed from Chamber {}'.format(active_chamber+1))           #                 
         log(f'Trying to update image of type {type(image_data)}')       # log the attempt

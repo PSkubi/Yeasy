@@ -30,7 +30,7 @@ def syringewindow1():
             break
     syringewindow1.close()
     return con_type
-def syringewindow2(type,measure_units):
+def syringewindow2(type,measure_units,syringeno):
     flowrate_units = ['µL/min', 'mL/min', 'µL/hr', 'mL/hr']
     layout = [
         [sg.Text(f'You have chosen {type} control')],
@@ -47,6 +47,33 @@ def syringewindow2(type,measure_units):
             break
         elif event in ('Confirm'):
             userinput = [type,int(values['-Syringe no-']),float(values['-Flow rate-']),float(values['-Control-']),str(values['-Flowrate units-']),str(values['-Control units-'])]
+            if userinput[2] == 0 or userinput[3] == 0:
+                sg.popup(f'Flow rate or {type} value cannot be 0')
+                continue
+            elif int(userinput[2]) < 0 or userinput[3] < 0:
+                sg.popup(f'Flow rate or {type} value cannot be negative')
+                continue
+            elif userinput[1]>syringeno:
+                sg.popup(f'Syringe number cannot be higher than {syringeno}')
+                continue
+            elif userinput[1]<1:
+                sg.popup(f'Syringe number cannot be lower than 1')
+                continue
+            elif userinput[1] == '':
+                sg.popup(f'Syringe number was not specified')
+                continue
+            elif userinput[2] == '':
+                sg.popup(f'Flow rate was not specified')
+                continue
+            elif userinput[3] == '':    
+                sg.popup(f'{type} was not specified')
+                continue
+            elif userinput[4] == '':
+                sg.popup(f'Flow rate units were not specified')
+                continue
+            elif userinput[5] == '':
+                sg.popup(f'{type} units were not specified')
+                continue
             break
     syringewindow2.close()
     return userinput
