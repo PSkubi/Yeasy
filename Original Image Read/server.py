@@ -1,13 +1,12 @@
 import socket
 import threading
 import os
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageFile
 import io
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import PySimpleGUI as sg
 import csv
-from PIL import ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 import time
 from Image_reading import *
@@ -36,17 +35,20 @@ def handle_client(conn, addr):
         try:
             msg_info = conn.recv(HEADER).decode(FORMAT,errors='ignore')                    # receive and decode the message
             if msg_info != '':                                             # if the message is not empty, proceed
-                if  'str' in msg_info or 'byt' in msg_info:                                             # if the message is not empty, proceed
+                if  'str' in msg_info:
                     msg_info = msg_info.replace(' ','')                                 # split the message info: length and type
-                    msg_info = msg_info.split('_')                                 # split the message info: length and type
-                    #log(f'Received message info: {msg_info}')
+                    msg_info = msg_info.split('_') 
                     if msg_info[1] == 'str':
                         msg_length = int(msg_info[0])
                         msg = conn.recv(msg_length).decode(FORMAT)
                         if msg == DISCONNECT_MESSAGE:
                             connected = False
                         log(f"[{addr}] {msg}")
-                    elif msg_info[1] == 'byt':
+                elif 'byt' in msg_info:                                             # if the message is not empty, proceed
+                    msg_info = msg_info.replace(' ','')                                 # split the message info: length and type
+                    msg_info = msg_info.split('_')                                 # split the message info: length and type
+                    #log(f'Received message info: {msg_info}')
+                    if msg_info[1] == 'byt':
                         msg_length = int(msg_info[0]) 
                         msg = conn.recv(msg_length)
                         global image_num
@@ -70,6 +72,13 @@ def handle_client(conn, addr):
                     log(f'Changing chamber to {msg_info[1]}')
                     global active_chamber
                     active_chamber = int(msg_info[1])
+                elif 'syr' in msg_info:
+                    log(f'The server was asked for syringe control by {addr}')
+                    msg_info = msg_info.replace(' ','')
+                    msg_info = msg_info.split('_')
+                    msg_info = msg_info[1:]
+                    syringe_operation(msg_info)
+                    log(f'The server received data for the syringe operation: {syringe_operation(msg_info)}')
         except UnicodeDecodeError:
             log('UnicodeDecodeError')
         except ConnectionResetError:
@@ -93,6 +102,7 @@ flist[1] = [x[1] for x in os.walk(folder)][0]
 flist[0].pop(0)
 
 # create a list of chamber names 
+active_chamber = 0  # The chamber that is currently being viewed    
 c_list = []
 for i in range(20):
     c_list.append('Chamber '+str(i+1))
@@ -113,23 +123,11 @@ fnames[1] = [f for f in c_flist[1] if f.lower().endswith(img_types)]
 fnames[2] = [f for f in c_flist[2] if f.lower().endswith(img_types)]
 
 # If there are no suitable images, throw a popup
-if chamber_sizes[0] == 0:
-    sg.popup('No files from Chamber 1!')
-    raise SystemExit()
-if chamber_sizes[1] == 0:
-    sg.popup('No files from Chamber 2!')
-    raise SystemExit()
-if chamber_sizes[2] == 0:
-    sg.popup('No files from Chamber 3!')
-    raise SystemExit()
-
-
-# ################################# The layout ##################################
-# active chamber index
-active_chamber = 0
-c_list = []
-for i in range(20):
-    c_list.append('Chamber '+str(i+1))
+for i in range(3):
+    if chamber_sizes[i] == 0:
+        sg.popup(f'No files from Chamber {i}!')
+        raise SystemExit()
+################################# Server Setup ###################################
 
 log("Server is starting...")
 server.listen()

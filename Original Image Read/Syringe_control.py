@@ -19,7 +19,7 @@ def syringewindow1():
     syringewindow1 = sg.Window('Control type',layout,size=(600,400))
     while True:
         event, values = syringewindow1.read()
-        if event == 'Cancel': #sg.WIN_CLOSED or 'Cancel':
+        if event in (sg.WIN_CLOSED,'Cancel'):
             con_type = []
             break
         elif event=='Volume':

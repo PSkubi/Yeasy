@@ -75,6 +75,11 @@ def change_chamber(chamber):
     msg_info = msg_info.encode(FORMAT)
     msg_info += b' ' * (HEADER - len(msg_info))
     client.send(msg_info)
+def send_syringe_control(controltype,syringeno,flowrate,control,flowrate_units,control_units):
+    msg = f'syr_{controltype}_{syringeno}_{flowrate}_{control}_{flowrate_units}_{control_units}'
+    msg = msg.encode(FORMAT)
+    msg += b' ' * (HEADER - len(msg))
+    client.send(msg)
 ########################### File Management ############################
 active_chamber = 0
 # create a list of chamber names 
@@ -158,8 +163,10 @@ while True:
             window['-CANVAS-'].expand(expand_x=True, expand_y=True, expand_row=False)
     elif event =='Syringe control':                                     # if the user clicks on the syringe control button
         syr_win_1 = syringewindow1()                                    # open the first syringe control window
-        syr_win_2 = syringewindow2(syr_win_1[0],syr_win_1[1])           # open the second syringe control window
-        log(syringe_operation(syr_win_2))                               # log the operation of the syringes
+        if syr_win_1 != []:
+            syr_win_2 = syringewindow2(syr_win_1[0],syr_win_1[1])           # open the second syringe control window
+            log(f'The user passed syringe control: {syringe_operation(syr_win_2)}')                               # log the operation of the syringes
+            send_syringe_control(*syr_win_2) # send the operation to the server
     if not graphing:                                                    # image update 
         chamber_info_elementplt.update('Live video feed from Chamber {}'.format(active_chamber+1))           #                 
         log(f'Trying to update image of type {type(image_data)}')       # log the attempt
