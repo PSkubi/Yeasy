@@ -111,14 +111,14 @@ filename = os.path.join(os.getcwd(), 'Original Image Read\\waiting.jpg')    # Lo
 image_elem = sg.Image(data=get_img_data(filename, first=True))              # Create the image element
 
 # Also get display elements. This is just for debugging (so that we can see what's going on)
-chamber_info_elementimg = sg.Text(text='Live video feed from Chamber {}'.format(active_chamber+1),expand_x=True,justification='center',font=('Calibri',30))
-chamber_info_elementplt = sg.Text(text='Graph of data from Chamber {}'.format(active_chamber+1),expand_x=True,justification='center',font=('Calibri',30))
+chamber_info_img = sg.Text(text='Live video feed from Chamber {}'.format(active_chamber+1),expand_x=True,justification='center',font=('Calibri',30))
+chamber_info_plt = sg.Text(text='Graph of data from Chamber {}'.format(active_chamber+1),expand_x=True,justification='center',font=('Calibri',30),key='chamber_info_plt')
 
 # define layout, show and read the form
 
-canvas_elem = sg.Canvas(size=(1200, 400),key='-CANVAS-',expand_x=True)
-imgcol = [[chamber_info_elementimg],[image_elem]]
-graphcol = [[chamber_info_elementplt],[canvas_elem]]
+canvas_elem = sg.Canvas(size=(1920, 1080),key='-CANVAS-',expand_x=True)
+imgcol = [[chamber_info_img],[image_elem]]
+graphcol = [[chamber_info_plt],[canvas_elem]]
 
 leftcol = [
     [sg.Listbox(values=c_list,font=('Calibri', 20), change_submits=True, size=(30, 20), key='listbox',expand_y=True)],
@@ -129,7 +129,14 @@ layout = [[sg.Column(leftcol,expand_x=True), sg.Column(imgcol, key='-COL1-',expa
 
 ################################# The main loop ###################################
 graphing = False
-window = sg.Window('Yeasy', layout, return_keyboard_events=True,size=(1920,1080),location=(0, 0), use_default_focus=False, finalize=True,keep_on_top=False)
+window = sg.Window('Yeasy', layout, return_keyboard_events=True,size=(1920,1080),location=(0, 0), use_default_focus=True, finalize=True,keep_on_top=False,resizable=True).Finalize()
+read_datafiles()
+window['-COL2-'].expand(expand_x=True, expand_y=True, expand_row=False)
+figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(plotarguments,plotvalues))
+clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas)
+window['chamber_info_plt'].update(visible=False)
+window.Maximize()
+
 while True:
     event, values = window.read(timeout=250)                            # read the form, set the timeout in miliseconds
     if event == sg.WIN_CLOSED:                                          # if the window closes - break the loop
@@ -139,7 +146,8 @@ while True:
         clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas)
         window['-COL2-'].update(visible=False)
         window['-COL1-'].update(visible=True)
-        window.maximize()
+        window['chamber_info_plt'].update(visible=False)
+        window.Maximize()
         window['-COL1-'].expand(expand_x=True, expand_y=True, expand_row=False)
     elif event in (sg.TIMEOUT_EVENT) and not graphing:
         image_data = ask_img()
@@ -147,8 +155,9 @@ while True:
     elif event == 'Graph':                                              # the graph button opens the graph    
         graphing = True
         read_datafiles()
-        window[f'-COL1-'].update(visible=False)
-        window[f'-COL2-'].update(visible=True)
+        window['-COL1-'].update(visible=False)
+        window['-COL2-'].update(visible=True)
+        window['chamber_info_plt'].update(visible=True)
         figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(plotarguments,plotvalues))
         window.maximize()
         window['-COL2-'].expand(expand_x=True, expand_y=True, expand_row=False)
@@ -164,11 +173,11 @@ while True:
     elif event =='Syringe control':                                     # if the user clicks on the syringe control button
         syr_win_1 = syringewindow1()                                    # open the first syringe control window
         if syr_win_1 != []:
-            syr_win_2 = syringewindow2(syr_win_1[0],syr_win_1[1])           # open the second syringe control window
-            log(f'The user passed syringe control: {syringe_operation(syr_win_2)}')                               # log the operation of the syringes
-            send_syringe_control(*syr_win_2) # send the operation to the server
+            syr_win_2 = syringewindow2(syr_win_1[0],syr_win_1[1])       # open the second syringe control window
+            log(f'The user passed syringe control: {syringe_operation(syr_win_2)}')   # log the operation of the syringes
+            send_syringe_control(*syr_win_2)                            # send the operation to the server
     if not graphing:                                                    # image update 
-        chamber_info_elementplt.update('Live video feed from Chamber {}'.format(active_chamber+1))           #                 
+        chamber_info_img.update('Live video feed from Chamber {}'.format(active_chamber+1))           #                 
         log(f'Trying to update image of type {type(image_data)}')       # log the attempt
         if isinstance(image_data, bytes):                               # if the image data is bytes, change it to bytes IO
             image_data = io.BytesIO(image_data)
@@ -177,7 +186,6 @@ while True:
         image.save(bio, format='PNG')                                   # save the image to the bytes IO object
         image_elem.update(data=bio.getvalue())                          # update the image element
     elif graphing: 
-        chamber_info_elementplt.update('Graph of data from Chamber {}'.format(active_chamber+1))
+        chamber_info_plt.update('Graph of data from Chamber {}'.format(active_chamber+1))
     log('Updated window')
-# Close the window
 window.close()
