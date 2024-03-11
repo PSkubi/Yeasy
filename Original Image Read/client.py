@@ -68,7 +68,7 @@ def ask_img():
     client.send(msg_info)                               # send the header containing 'imgask'
     img_size = int(client.recv(HEADER).decode(FORMAT))  # receive the size of the image 
     log(f'Server is sending an image of size <<{img_size}>>')
-    client.send('ok'.encode(FORMAT))                    # send the 'ok' message to the server
+    #client.send('ok'.encode(FORMAT))                    # send the 'ok' message to the server
     img_rec = client.recv(img_size)                     # receive the image
     log(f'Received an image of size <<{len(img_rec)}>> from the server!')
     return img_rec

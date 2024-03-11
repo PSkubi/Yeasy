@@ -61,9 +61,11 @@ def handle_client(conn, addr):
                     msg_info = str(len(byte_im)).encode(FORMAT)
                     msg_info += b' ' * (HEADER - len(msg_info))
                     conn.send(msg_info)
-                    if conn.recv(2).decode(FORMAT) == 'ok':
-                        log(f'Sending image to {addr}')
-                        conn.send(byte_im)
+                    log(f'Sending image to {addr}')
+                    conn.send(byte_im)
+                    # if conn.recv(2).decode(FORMAT) == 'ok':
+                    #     log(f'Sending image to {addr}')
+                    #     conn.send(byte_im)
                 elif 'chamber' in msg_info:
                     msg_info = msg_info.split('_')
                     log(f'Changing chamber to {msg_info[1]}')
