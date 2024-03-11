@@ -77,9 +77,12 @@ def change_chamber(number):
     msg_info += b' ' * (HEADER - len(msg_info))         # add spaces to the length of the message to make it 32 bytes
     client.send(msg_info)
 def send_syringe_control(control_list):
-    control_list[0] = control_dict[control_list[0]]
-    control_list[4] = control_dict[control_list[4]]
-    control_list[5] = control_dict[control_list[5]]
+    for i in (0,4,5):
+        try:
+            control_list[i] = control_dict[control_list[i]]
+        except:
+            sg.popup('Wrong units selected!')
+            return
     msg = f'syr_{control_list[0]}_{control_list[1]}_{control_list[2]}_{control_list[3]}_{control_list[4]}_{control_list[5]}'.encode(FORMAT)
     msg += b' ' * (HEADER - len(msg))
     client.send(msg)

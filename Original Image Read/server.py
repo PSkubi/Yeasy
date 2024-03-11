@@ -1,13 +1,9 @@
 import socket
 import threading
-import os
-from PIL import Image, ImageTk, ImageFile
+import os 
+from PIL import Image
 import io
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import PySimpleGUI as sg
-import csv
-ImageFile.LOAD_TRUNCATED_IMAGES = True
 import time
 from Image_reading import *
 from Syringe_control import *
