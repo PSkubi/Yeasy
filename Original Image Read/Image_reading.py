@@ -1,5 +1,6 @@
 from PIL import Image, ImageTk
 import io
+import os
 ################################## Image reading ######################################
 
 # Define a function which opens an image file using Python Imaging Library
@@ -21,3 +22,5 @@ def image_to_bytes(image_path):
         image_file.save(image_bytes, format='PNG')
         image_bytes = image_bytes.getvalue()
     return image_bytes
+if __name__ == '__main__':
+    print(os.getcwd())

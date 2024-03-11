@@ -96,8 +96,10 @@ for i in range(chamber_number):
 Arguments_files = []
 Values_files = []
 for i in range(3):
-    Arguments_files.append(os.path.join(os.getcwd(), f'Original Image Read\\Data\\Chamber {i+1} data\\YeastDataArguments.csv'))
-    Values_files.append(os.path.join(os.getcwd(), f'Original Image Read\\Data\\Chamber {i+1} data\\YeastDataValues.csv'))
+    Arguments_files.append(os.path.join(os.getcwd(), f'C:\\Users\\piotr\\OneDrive - Imperial College London\\Yeasy\\YeasyImageRead\\Original Image Read\\Data\\Chamber {i+1} data\\YeastDataArguments.csv'))
+    Values_files.append(os.path.join(os.getcwd(), f'C:\\Users\\piotr\\OneDrive - Imperial College London\\Yeasy\\YeasyImageRead\\Original Image Read\\Data\\Chamber {i+1} data\\YeastDataValues.csv'))
+    #Arguments_files.append(os.path.join(os.getcwd(), f'Original Image Read\\Data\\Chamber {i+1} data\\YeastDataArguments.csv'))
+    #Values_files.append(os.path.join(os.getcwd(), f'Original Image Read\\Data\\Chamber {i+1} data\\YeastDataValues.csv'))
 log(f'Loaded arguments files: {Arguments_files}')
 log(f'Loaded values file: {Values_files}')
 
@@ -113,8 +115,11 @@ def read_datafiles():
     plotvalues = [int(y) for y in plotvalues]
 
 ################################# The layout ##################################
-filename = os.path.join(os.getcwd(), 'Original Image Read\\waiting.jpg')    # Load the waiting image
-image_elem = sg.Image(data=get_img_data(filename, first=True))              # Create the image element
+#filename = os.path.join(os.getcwd(), 'Original Image Read\\waiting.jpg')    # Load the waiting image
+waiting_image = os.path.join(os.getcwd(), '\\waiting.jpg')    # Load the waiting image
+waiting_image='C:\\Users\\piotr\OneDrive - Imperial College London\\Yeasy\\YeasyImageRead\\Original Image Read\\waiting.jpg'
+
+image_elem = sg.Image(data=get_img_data(waiting_image, first=True))              # Create the image element
 
 # Also get display elements. This is just for debugging (so that we can see what's going on)
 chamber_info_img = sg.Text(text='Live video feed from Chamber {}'.format(active_chamber+1),expand_x=True,justification='center',font=('Calibri',30))
