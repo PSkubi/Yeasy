@@ -106,11 +106,16 @@ class Syringe:
         response = self.send_command("RAT", rate, units)
         return response
 
+    def set_phase(self, phase_number: int):
+        response = self.send_command("PHN", phase_number)
+        return response
+
     def create_pumping_phase(self, rate, units, vol, dir="INF", phase_number=-1):
         if phase_number == -1:
             # just do next phase
             phase_number = self.phase_count+1
-        
+
+        self.set_phase(phase_number)        
         self.set_rate(rate, units)
         self.set_volume(vol) # volume units are determined by rate units
         self.set_dir(dir)

@@ -35,7 +35,8 @@ def set_pump_phase(sid):
     units = request.form.get("units", type=str)
     volume = request.form.get("volume", type=float)
     direction = request.form.get("direction", type=str, default="INF")
-    status = syringe.create_pumping_phase(rate, units, volume, direction)
+    phase_number = request.form.get("phase", type=int, default=-1)
+    status = syringe.create_pumping_phase(rate, units, volume, direction, phase_number=phase_number)
     return status
 
 @api.route("/syringe/<int:sid>/diameter", methods=['POST'])
