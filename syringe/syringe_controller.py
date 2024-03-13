@@ -1,5 +1,5 @@
 """Syringe controller class."""
-from .syringe import Syringe
+from syringe import Syringe
 
 class SyringeController:
     def __init__(self, conn):
@@ -11,6 +11,8 @@ class SyringeController:
         new_address = len(self.syringes)
         new_syringe = Syringe(self.conn, new_address)
         self.syringes.append(new_syringe)
+        print(f"Added syringe with address {new_address}.")
+        return
     
     def GetAll(self):
         return self.syringes
