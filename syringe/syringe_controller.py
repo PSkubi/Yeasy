@@ -20,8 +20,3 @@ class SyringeController:
     def Get(self, address):
         syringe = self.syringes[address]
         return syringe
-    
-    def AddPhase(self, address, phase):
-        syringe = self.Get(address)
-        return
-    

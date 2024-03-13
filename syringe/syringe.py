@@ -13,6 +13,7 @@ class Syringe:
 
         self.status = ""
         self.history = []
+        self.phase_count = 0
         return
     
     def _check_float(self, f):
@@ -53,7 +54,22 @@ class Syringe:
         # TODO implement clear and check status before sending STP
         response = self.send_command("STP")
         return response
-    
+
+    def clear(self):
+        # send stop twice to pause and then clear
+        self.send_command("STP")
+        response = self.send_command("STP")
+        self.phase_count = 0
+        return response
+
+    def get_diameter(self):
+        response = self.send_command("DIA")
+        return response
+
+    def get_rate(self):
+        response = self.send_command("RAT")
+        return response
+
     def set_diameter(self, diameter: float):
         diameter = self._check_float(diameter)
         if diameter is None:
@@ -61,7 +77,23 @@ class Syringe:
 
         response = self.send_command("DIA", diameter)
         return response
+
+    def set_volume(self, volume: float):
+        volume = self._check_float(volume)
+        if volume is None:
+            return # TODO add an error statement
+
+        response = self.send_command("VOL", volume)
+        return response
     
+    def set_direction(self, direction: str):
+        valid_directions= ["INF", "WDR"] # infuse, withdraw
+        if direction not in valid_directions:
+            return # TODO add an error statement 
+
+        response = self.send_command("DIR", direction)
+        return response
+
     def set_rate(self, rate: float, units: str):
         valid_units = ["UM", "MM", "UH", "MH"] # µL/min, mL/min, µL/hr, mL/hr
         if units not in valid_units:
@@ -73,3 +105,15 @@ class Syringe:
         
         response = self.send_command("RAT", rate, units)
         return response
+
+    def create_pumping_phase(self, rate, units, vol, dir="INF", phase_number=-1):
+        if phase_number == -1:
+            # just do next phase
+            phase_number = self.phase_count+1
+        
+        self.set_rate(rate, units)
+        self.set_volume(vol) # volume units are determined by rate units
+        self.set_dir(dir)
+
+        self.phase_count += 1
+        return
