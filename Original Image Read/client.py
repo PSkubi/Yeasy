@@ -84,9 +84,9 @@ def send_syringe_control(control_list):
         except:
             sg.popup('Wrong units selected!')
             return
-        new_phase = {'rate':control_list[2],'units':control_list[3],'direction':"INF",'volume':control_list[4]}
-        endpoint = f"{SERVER}/syringe/{control_list[1]}/pump_phase"
-        req.post(SERVER, new_phase) 
+    new_phase = {'rate':control_list[2],'units':control_list[3],'direction':"INF",'volume':control_list[4]}
+    endpoint = f"{SERVER}/syringe/{control_list[1]}/pump_phase"
+    req.post(SERVER, new_phase) 
     # msg = f'syr_{control_list[0]}_{control_list[1]}_{control_list[2]}_{control_list[3]}_{control_list[4]}_{control_list[5]}'.encode(FORMAT)
     # msg += b' ' * (HEADER - len(msg))
     # client.send(msg)
@@ -100,12 +100,12 @@ for i in range(chamber_number):
 Arguments_files = []
 Values_files = []
 for i in range(3):
-    Arguments_files.append(os.path.join(os.getcwd(), f'C:\\Users\\piotr\\OneDrive - Imperial College London\\Yeasy\\YeasyImageRead\\Original Image Read\\Data\\Chamber {i+1} data\\YeastDataArguments.csv'))
-    Values_files.append(os.path.join(os.getcwd(), f'C:\\Users\\piotr\\OneDrive - Imperial College London\\Yeasy\\YeasyImageRead\\Original Image Read\\Data\\Chamber {i+1} data\\YeastDataValues.csv'))
-    #Arguments_files.append(os.path.join(os.getcwd(), f'Original Image Read\\Data\\Chamber {i+1} data\\YeastDataArguments.csv'))
-    #Values_files.append(os.path.join(os.getcwd(), f'Original Image Read\\Data\\Chamber {i+1} data\\YeastDataValues.csv'))
-log(f'Loaded arguments files: {Arguments_files}')
-log(f'Loaded values file: {Values_files}')
+    #Arguments_files.append(os.path.join(os.getcwd(), f'C:\\Users\\piotr\\OneDrive - Imperial College London\\Yeasy\\YeasyImageRead\\Original Image Read\\Data\\Chamber {i+1} data\\YeastDataArguments.csv'))
+    #Values_files.append(os.path.join(os.getcwd(), f'C:\\Users\\piotr\\OneDrive - Imperial College London\\Yeasy\\YeasyImageRead\\Original Image Read\\Data\\Chamber {i+1} data\\YeastDataValues.csv'))
+    Arguments_files.append(os.path.join(os.getcwd(), f'Original Image Read\\Data\\Chamber {i+1} data\\YeastDataArguments.csv'))
+    Values_files.append(os.path.join(os.getcwd(), f'Original Image Read\\Data\\Chamber {i+1} data\\YeastDataValues.csv'))
+    log(f'Loaded arguments files: {Arguments_files[i]}')
+    log(f'Loaded values file: {Values_files[i]}')
 
 # Use csv reader to read the numerical data from those two files
 def read_datafiles():
