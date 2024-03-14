@@ -86,10 +86,22 @@ def send_syringe_control(control_list):
             return
     new_phase = {'rate':control_list[2],'units':control_list[3],'direction':"INF",'volume':control_list[4]}
     endpoint = f"{SERVER}/syringe/{control_list[1]}/pump_phase"
-    req.post(SERVER, new_phase) 
+    req.post(endpoint, new_phase) 
     # msg = f'syr_{control_list[0]}_{control_list[1]}_{control_list[2]}_{control_list[3]}_{control_list[4]}_{control_list[5]}'.encode(FORMAT)
     # msg += b' ' * (HEADER - len(msg))
     # client.send(msg)
+def stop_syringe(sid):
+    endpoint = f"{SERVER}/syringe/{sid}/stop"
+    req.post(endpoint)
+def run_syringe(sid):
+    endpoint = f"{SERVER}/syringe/{sid}/run"
+    req.post(endpoint)
+def syringe_set_d(sid,diameter):
+    endpoint = f"{SERVER}/syringe/{sid}/diameter"
+    req.post(endpoint, {'value':diameter})
+def syringe_clear(sid):
+    endpoint = f"{SERVER}/syringe/{sid}/clear"
+    req.post(endpoint)
 ########################### File Management ############################
 active_chamber = 0
 # create a list of chamber names 
