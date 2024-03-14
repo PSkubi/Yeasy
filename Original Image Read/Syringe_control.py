@@ -23,7 +23,7 @@ def syringewindow1():
             con_type = []
             break
         elif event=='Volume':
-            con_type = ['Volume',['µL', 'mL', 'L']]
+            con_type = ['Volume',['µL', 'mL']]
             break
         elif event=='Duration':
             con_type = ['Duration',['minutes','hours']]
@@ -75,5 +75,30 @@ def syringewindow2(type,measure_units,syringeno):
                 sg.popup(f'{type} units were not specified')
                 continue
             break
+    if userinput[0] == 'Duration': # Convert duration to volume
+        if userinput[5] == 'minutes' and userinput[2] == 'µL/min':
+            userinput[3] = userinput[3]*userinput[2]
+            userinput[5] = 'µL'
+        elif userinput[5] == 'minutes' and userinput[2] == 'mL/min':
+            userinput[3] = userinput[3]*userinput[2]
+            userinput[5] = 'mL'
+        elif userinput[5] == 'hours'and userinput[2] == 'mL/min':        
+            userinput[3] = userinput[3]*userinput[2]*60
+            userinput[5] = 'mL'
+        elif userinput[5] == 'hours'and userinput[2] == 'µL/min':        
+            userinput[3] = userinput[3]*userinput[2]*60
+            userinput[5] = 'µL'
+        elif userinput[5] == 'minutes' and userinput[2] == 'µL/hr':
+            userinput[3] = userinput[3]*userinput[2]/60
+            userinput[5] = 'µL'
+        elif userinput[5] == 'minutes' and userinput[2] == 'mL/hr':
+            userinput[3] = userinput[3]*userinput[2]/60
+            userinput[5] = 'mL'
+        elif userinput[5] == 'hours'and userinput[2] == 'µL/hr':        
+            userinput[3] = userinput[3]*userinput[2]
+            userinput[5] = 'µL'
+        elif userinput[5] == 'hours'and userinput[2] == 'mL/hr':        
+            userinput[3] = userinput[3]*userinput[2]
+            userinput[5] = 'mL'
     syringewindow2.close()
     return userinput

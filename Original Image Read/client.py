@@ -10,6 +10,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from Plot_setup import *
 from Image_reading import *
 from Syringe_control import *
+import requests as req
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 start = time.time()
 
@@ -36,47 +37,46 @@ def setupwindow():
 setup = setupwindow()
 log(f'Loaded setup: Server IP is {setup[0]}, number of chambers is {setup[1]}, number of syringes is {setup[2]}') 
 ########################## Constant values setup ############################
-HEADER = 32                                             # length of the header message
-PORT = 5050                                             # port number                                 
+# HEADER = 32                                             # length of the header message
+# PORT = 5050                                             # port number                                 
 SERVER = setup[0]                                       # server IP address
-ADDR = (SERVER, PORT)                                   # address of the server
-FORMAT = 'utf-8'                                        # format of the message
-DISCONNECT_MESSAGE = "!DISCONNECT"                      # disconnect message       
+# ADDR = (SERVER, PORT)                                   # address of the server
+# FORMAT = 'utf-8'                                        # format of the message
+# DISCONNECT_MESSAGE = "!DISCONNECT"                      # disconnect message       
 chamber_number = int(setup[1])                          # number of chambers                          
 syringe_number = int(setup[2])                          # number of syringes
-control_dict={'Volume':0,'Duration':1,'µL':2, 'mL':3, 'L':4,'minutes':5,'hours':6,'µL/min':7, 'mL/min':8, 'µL/hr':9, 'mL/hr':10} # dictionary for the control type encoding
-
-client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # create a client socket
-client.connect(ADDR)                                        # connect to the server
+control_dict={'Volume':0,'Duration':1,'µL':2, 'mL':3, 'L':4,'minutes':5,'hours':6,'µL/min':'UM', 'mL/min':'MM', 'µL/hr':'UH', 'mL/hr':'MH'} # dictionary for the control type encoding
+# client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # create a client socket
+# client.connect(ADDR)                                        # connect to the server
 ########################## Sending data to the server ############################
-def send_string(msg):
-    message = msg.encode(FORMAT)                        # encode the message
-    msg_info = str(len(message))+'_str'                 # get the info of the message    
-    send_info = msg_info.encode(FORMAT)                 # encode the length of the message
-    send_info += b' ' * (HEADER - len(send_info))       # add spaces to the length of the message to make it 32 bytes
-    client.send(send_info)                              # send the length of the message                             
-    client.send(message)                                # send the message
-def send_bytes(msg):
-    msg_info = str(len(msg))+'_byt'                     # get the info of the message   
-    log(f'Sent message info: {msg_info}') 
-    send_info = msg_info.encode(FORMAT)                 # encode the length of the message
-    send_info += b' ' * (HEADER - len(send_info))       # add spaces to the length of the message to make it 32 bytes
-    client.send(send_info)                              # send the length of the message                             
-    client.send(msg)                                    # send the message
-def ask_img():
-    msg_info = 'imgask'.encode(FORMAT)                  # encode the 'imageask' string
-    msg_info += b' ' * (HEADER - len(msg_info))         # add spaces to the length of the message to make it 32 bytes
-    client.send(msg_info)                               # send the header containing 'imgask'
-    img_size = int((client.recv(HEADER)).decode(FORMAT))# receive the size of the image 
-    log(f'Server is sending an image of size <<{img_size}>>')
-    #client.send('ok'.encode(FORMAT))                    # send the 'ok' message to the server
-    img_rec = client.recv(img_size)                     # receive the image
-    log(f'Received an image of size <<{len(img_rec)}>> from the server!')
-    return img_rec
-def change_chamber(number):
-    msg_info = f'chamber_{number}'.encode(FORMAT)       # encode the 'chamber_{number}' string)              
-    msg_info += b' ' * (HEADER - len(msg_info))         # add spaces to the length of the message to make it 32 bytes
-    client.send(msg_info)
+# def send_string(msg):
+#     message = msg.encode(FORMAT)                        # encode the message
+#     msg_info = str(len(message))+'_str'                 # get the info of the message    
+#     send_info = msg_info.encode(FORMAT)                 # encode the length of the message
+#     send_info += b' ' * (HEADER - len(send_info))       # add spaces to the length of the message to make it 32 bytes
+#     client.send(send_info)                              # send the length of the message                             
+#     client.send(message)                                # send the message
+# def send_bytes(msg):
+#     msg_info = str(len(msg))+'_byt'                     # get the info of the message   
+#     log(f'Sent message info: {msg_info}') 
+#     send_info = msg_info.encode(FORMAT)                 # encode the length of the message
+#     send_info += b' ' * (HEADER - len(send_info))       # add spaces to the length of the message to make it 32 bytes
+#     client.send(send_info)                              # send the length of the message                             
+#     client.send(msg)                                    # send the message
+# def ask_img():
+#     msg_info = 'imgask'.encode(FORMAT)                  # encode the 'imageask' string
+#     msg_info += b' ' * (HEADER - len(msg_info))         # add spaces to the length of the message to make it 32 bytes
+#     client.send(msg_info)                               # send the header containing 'imgask'
+#     img_size = int((client.recv(HEADER)).decode(FORMAT))# receive the size of the image 
+#     log(f'Server is sending an image of size <<{img_size}>>')
+#     #client.send('ok'.encode(FORMAT))                    # send the 'ok' message to the server
+#     img_rec = client.recv(img_size)                     # receive the image
+#     log(f'Received an image of size <<{len(img_rec)}>> from the server!')
+#     return img_rec
+# def change_chamber(number):
+#     msg_info = f'chamber_{number}'.encode(FORMAT)       # encode the 'chamber_{number}' string)              
+#     msg_info += b' ' * (HEADER - len(msg_info))         # add spaces to the length of the message to make it 32 bytes
+#     client.send(msg_info)
 def send_syringe_control(control_list):
     for i in (0,4,5):
         try:
@@ -84,9 +84,12 @@ def send_syringe_control(control_list):
         except:
             sg.popup('Wrong units selected!')
             return
-    msg = f'syr_{control_list[0]}_{control_list[1]}_{control_list[2]}_{control_list[3]}_{control_list[4]}_{control_list[5]}'.encode(FORMAT)
-    msg += b' ' * (HEADER - len(msg))
-    client.send(msg)
+        new_phase = {'rate':control_list[2],'units':control_list[3],'direction':"INF",'volume':control_list[4]}
+        endpoint = f"{SERVER}/syringe/{control_list[1]}/pump_phase"
+        req.post(SERVER, new_phase) 
+    # msg = f'syr_{control_list[0]}_{control_list[1]}_{control_list[2]}_{control_list[3]}_{control_list[4]}_{control_list[5]}'.encode(FORMAT)
+    # msg += b' ' * (HEADER - len(msg))
+    # client.send(msg)
 ########################### File Management ############################
 active_chamber = 0
 # create a list of chamber names 
@@ -161,9 +164,9 @@ while True:
         window['chamber_info_plt'].update(visible=False)
         window.Maximize()
         window['-COL1-'].expand(expand_x=True, expand_y=True, expand_row=False)
-    elif event in (sg.TIMEOUT_EVENT) and not graphing:
-        image_data = ask_img()
-        log(f'Image data loaded: size <<{len(image_data)}>>')
+    # elif event in (sg.TIMEOUT_EVENT) and not graphing:
+    #     image_data = ask_img()
+    #     log(f'Image data loaded: size <<{len(image_data)}>>')
     elif event == 'Graph':                                              # the graph button opens the graph    
         graphing = True
         read_datafiles()
@@ -173,15 +176,15 @@ while True:
         figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(plotarguments,plotvalues))
         window.maximize()
         window['-COL2-'].expand(expand_x=True, expand_y=True, expand_row=False)
-    elif event == 'listbox':                                            # something from the list of chambers
-        active_chamber = c_list.index(values["listbox"][0])             # change the active chamber
-        log(f'Changed active chamber to {active_chamber+1}')            # log the change
-        change_chamber(active_chamber)                                  # send the change to the server
-        if graphing:
-            read_datafiles()
-            clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas)
-            figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(plotarguments,plotvalues))
-            window['-CANVAS-'].expand(expand_x=True, expand_y=True, expand_row=False)
+    # elif event == 'listbox':                                            # something from the list of chambers
+    #     active_chamber = c_list.index(values["listbox"][0])             # change the active chamber
+    #     log(f'Changed active chamber to {active_chamber+1}')            # log the change
+    #     change_chamber(active_chamber)                                  # send the change to the server
+    #     if graphing:
+    #         read_datafiles()
+    #         clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas)
+    #         figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(plotarguments,plotvalues))
+    #         window['-CANVAS-'].expand(expand_x=True, expand_y=True, expand_row=False)
     elif event =='Syringe control':                                     # if the user clicks on the syringe control button
         syr_win_1 = syringewindow1()                                    # open the first syringe control window
         if syr_win_1 != []:
@@ -190,14 +193,15 @@ while True:
             if syringe_operation(syr_win_2) != ('None',0,0,0,0,0):                      # if the user actually selected something
                 send_syringe_control(syr_win_2)                        # send the operation to the server
     if not graphing:                                                    # image update 
-        chamber_info_img.update('Live video feed from Chamber {}'.format(active_chamber+1))           #                 
-        log(f'Trying to update image of type {type(image_data)}')       # log the attempt
-        if isinstance(image_data, bytes):                               # if the image data is bytes, change it to bytes IO
-            image_data = io.BytesIO(image_data)
-        image = Image.open(image_data)                                  # open the image
-        bio = io.BytesIO()                                              # create a bytes IO object
-        image.save(bio, format='PNG')                                   # save the image to the bytes IO object
-        image_elem.update(data=bio.getvalue())                          # update the image element
+        # chamber_info_img.update('Live video feed from Chamber {}'.format(active_chamber+1))           #                 
+        # log(f'Trying to update image of type {type(image_data)}')       # log the attempt
+        # if isinstance(image_data, bytes):                               # if the image data is bytes, change it to bytes IO
+        #     image_data = io.BytesIO(image_data)
+        # image = Image.open(image_data)                                  # open the image
+        # bio = io.BytesIO()                                              # create a bytes IO object
+        # image.save(bio, format='PNG')                                   # save the image to the bytes IO object
+        # image_elem.update(data=bio.getvalue())                          # update the image element
+        pass
     elif graphing: 
         chamber_info_plt.update('Graph of data from Chamber {}'.format(active_chamber+1))
     log('Updated window')
