@@ -1,37 +1,66 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, request
+from .syringe_controller import SyringeController
 
 api = Blueprint("backend", __name__)
 
-@api.route("/")
-def home():
-    return
+syringe_controller = SyringeController()
 
-@api.route("/queue", methods=['GET'])
-def q_read_all():
-    """Gets all queues"""
-    return
+@api.route("/syringe/<int:sid>/status", methods=['GET'])
+def get_status(sid):
+    """Gets the syringe corresponding to the sid"""
+    # TODO
+    syringe = syringe_controller.Get(sid)
+    return syringe
 
-@api.route("/queue/<int:q_id>", methods=['GET'])
-def read_q_id(q_id):
-    """Gets the queue corresponding to the q id"""
-    return
+@api.route("/syringe/<int:sid>/stop", methods=['POST'])
+def stop(sid):
+    """Adds a stop step to the corresponding sid"""
+    syringe = syringe_controller.Get(sid)
+    status = syringe.stop()
+    return status
 
-@api.route("/queue/<int:q_id>", methods=['POST'])
-def add_step(q_id):
-    """Adds a new step to the corresponding q id"""
-    return
+@api.route("/syringe/<int:sid>/run", methods=['POST'])
+def run(sid):
+    """Adds a stop step to the corresponding sid"""
+    syringe = syringe_controller.Get(sid)
+    phase_number = request.form.get("value", default=1, type=int)
+    status = syringe.run(phase_number)
+    return status
 
-@api.route("/queue/<int:q_id>", methods=['DELETE'])
-def del_job(q_id):
-    """Deletes the queue corresponding to the q id"""
-    return
+@api.route("/syringe/<int:sid>/pump_phase", methods=['POST'])
+def set_pump_phase(sid):
+    """Sets up a whole pumping phase for the syringe with the corresponding sid"""
+    syringe = syringe_controller.Get(sid)
+    rate = request.form.get("rate", type=float)
+    units = request.form.get("units", type=str)
+    volume = request.form.get("volume", type=float)
+    direction = request.form.get("direction", type=str, default="INF")
+    phase_number = request.form.get("phase", type=int, default=-1)
+    status = syringe.create_pumping_phase(rate, units, volume, direction, phase_number=phase_number)
+    return status
 
-@api.route("/queue/<int:q_id>/<int:step_id>", methods=['DELETE'])
-def del_step(q_id, step_id):
-    """Deletes a step corresponding with step id from the queue corresponding with q id"""
-    return
+@api.route("/syringe/<int:sid>/diameter", methods=['POST'])
+def set_diameter(sid):
+    """Sets diameter of syringe for the corresponding sid"""
+    syringe = syringe_controller.Get(sid)
+    diameter = request.form.get("value", type=float)
+    status = syringe.set_diameter(diameter)
+    return status
 
-@api.route("/queue/<int:q_id>/<int:step_id>", methods=['UPDATE'])
-def update_step(q_id, step_id):
-    """Edits a step within a specific queue corresponding to q id. The step must not be in progress."""
-    return
+@api.route("/syringe/<int:sid>/clear", methods=['POST'])
+def clear_phases(sid):
+    """Clears the Pumping Program on the syringe corresponding with sid"""
+    syringe = syringe_controller.Get(sid)
+    status = syringe.clear()
+    return status
+
+'''
+@api.route("/syringe/<int:sid>/rate", methods=['POST'])
+def set_rate(sid):
+    """Sets rate of syringe for the corresponding sid"""
+    syringe = syringe_controller.Get(sid)
+    rate = request.form.get("value", type=float)
+    unit = request.form.get("unit", type=str)
+    status = syringe.set_rate(rate, unit)
+    return status
+'''

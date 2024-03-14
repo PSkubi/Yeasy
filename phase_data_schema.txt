@@ -1,0 +1,7 @@
+{
+
+    "function": "set_rate" | "run" | "stop",
+    "units": "u/min" | "u/hr" | "ml/min" | "ml/hr",
+    "rate_value": "number"
+
+}
