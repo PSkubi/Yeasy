@@ -61,7 +61,8 @@ def handle_client(conn, addr):
                     msg_info = str(len(byte_im)).encode(FORMAT)
                     msg_info += b' ' * (HEADER - len(msg_info))
                     conn.send(msg_info)
-                    log(f'Sending image to {addr}')
+                    log(f'Sending image size {msg_info.decode(FORMAT)}to {addr}')
+                    log(f'Sending image of size {len(byte_im)}to {addr}')
                     conn.send(byte_im)
                     # if conn.recv(2).decode(FORMAT) == 'ok':
                     #     log(f'Sending image to {addr}')

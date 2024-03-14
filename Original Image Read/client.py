@@ -2,7 +2,7 @@ import socket
 import time
 import PySimpleGUI as sg
 import os
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk,ImageFile
 import io
 import csv
 import matplotlib.pyplot as plt
@@ -10,6 +10,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from Plot_setup import *
 from Image_reading import *
 from Syringe_control import *
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 start = time.time()
 
 def log(msg):
@@ -66,7 +67,7 @@ def ask_img():
     msg_info = 'imgask'.encode(FORMAT)                  # encode the 'imageask' string
     msg_info += b' ' * (HEADER - len(msg_info))         # add spaces to the length of the message to make it 32 bytes
     client.send(msg_info)                               # send the header containing 'imgask'
-    img_size = int(client.recv(HEADER).decode(FORMAT))  # receive the size of the image 
+    img_size = int((client.recv(HEADER)).decode(FORMAT))# receive the size of the image 
     log(f'Server is sending an image of size <<{img_size}>>')
     #client.send('ok'.encode(FORMAT))                    # send the 'ok' message to the server
     img_rec = client.recv(img_size)                     # receive the image
