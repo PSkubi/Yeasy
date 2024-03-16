@@ -40,6 +40,7 @@ log(f'Loaded setup: Server IP is {setup[0]}, number of chambers is {setup[1]}, n
 # HEADER = 32                                             # length of the header message
 # PORT = 5050                                             # port number                                 
 SERVER = f"http://{setup[0]}/api"                         # api base route from server IP address
+BASE_DIR = os.path.dirname(__file__)                           # base directory for relative paths
 # ADDR = (SERVER, PORT)                                   # address of the server
 # FORMAT = 'utf-8'                                        # format of the message
 # DISCONNECT_MESSAGE = "!DISCONNECT"                      # disconnect message       
@@ -84,10 +85,10 @@ for i in range(chamber_number):
 Arguments_files = []
 Values_files = []
 for i in range(3):
-    #Arguments_files.append(os.path.join(os.getcwd(), f'C:\\Users\\piotr\\OneDrive - Imperial College London\\Yeasy\\YeasyImageRead\\Original Image Read\\Data\\Chamber {i+1} data\\YeastDataArguments.csv'))
-    #Values_files.append(os.path.join(os.getcwd(), f'C:\\Users\\piotr\\OneDrive - Imperial College London\\Yeasy\\YeasyImageRead\\Original Image Read\\Data\\Chamber {i+1} data\\YeastDataValues.csv'))
-    Arguments_files.append(os.path.join(os.getcwd(), f'Original Image Read\\Data\\Chamber {i+1} data\\YeastDataArguments.csv'))
-    Values_files.append(os.path.join(os.getcwd(), f'Original Image Read\\Data\\Chamber {i+1} data\\YeastDataValues.csv'))
+    #Arguments_files.append(os.path.join(BASE_DIR, f'C:\\Users\\piotr\\OneDrive - Imperial College London\\Yeasy\\YeasyImageRead\\Original Image Read\\Data\\Chamber {i+1} data\\YeastDataArguments.csv'))
+    #Values_files.append(os.path.join(BASE_DIR, f'C:\\Users\\piotr\\OneDrive - Imperial College London\\Yeasy\\YeasyImageRead\\Original Image Read\\Data\\Chamber {i+1} data\\YeastDataValues.csv'))
+    Arguments_files.append(os.path.join(BASE_DIR, f'Data/Chamber {i+1} data/YeastDataArguments.csv'))
+    Values_files.append(os.path.join(BASE_DIR, f'Data/Chamber {i+1} data/YeastDataValues.csv'))
     log(f'Loaded arguments files: {Arguments_files[i]}')
     log(f'Loaded values file: {Values_files[i]}')
 
@@ -103,8 +104,8 @@ def read_datafiles():
     plotvalues = [int(y) for y in plotvalues]
 
 ################################# The layout ##################################
-#filename = os.path.join(os.getcwd(), 'Original Image Read\\waiting.jpg')    # Load the waiting image
-waiting_image = os.path.join(os.getcwd(), 'Original Image Read\\waiting.jpg')    # Load the waiting image
+#filename = os.path.join(BASE_DIR, 'Original Image Read\\waiting.jpg')    # Load the waiting image
+waiting_image = os.path.join(BASE_DIR, 'waiting.jpg')    # Load the waiting image
 #waiting_image='C:\\Users\\piotr\OneDrive - Imperial College London\\Yeasy\\YeasyImageRead\\Original Image Read\\waiting.jpg'
 
 image_elem = sg.Image(data=get_img_data(waiting_image, first=True))              # Create the image element
