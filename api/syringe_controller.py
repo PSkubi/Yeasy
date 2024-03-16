@@ -1,5 +1,5 @@
 """Syringe controller class."""
-from syringe import Syringe
+from .syringe import Syringe
 
 class SyringeController:
     def __init__(self, conn):

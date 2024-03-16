@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request
+from flask import Blueprint, request
 from .syringe_controller import SyringeController
 
 api = Blueprint("backend", __name__)
