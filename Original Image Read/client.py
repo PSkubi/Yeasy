@@ -11,6 +11,7 @@ from Plot_setup import *
 from Image_reading import *
 from Syringe_control import *
 import requests as req
+import numpy as np  
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 start = time.time()
 
@@ -57,7 +58,7 @@ def send_syringe_control(control_list):
         except:
             sg.popup('Wrong units selected!')
             return
-    new_phase = {'rate':control_list[2],'units':control_list[3],'direction':"INF",'volume':control_list[4]}
+    new_phase = {'rate':control_list[2],'units':control_list[4],'direction':"INF",'volume':control_list[3]}
     endpoint = f"{SERVER}/syringe/{control_list[1]}/pump_phase"
     req.post(endpoint, new_phase) 
     # msg = f'syr_{control_list[0]}_{control_list[1]}_{control_list[2]}_{control_list[3]}_{control_list[4]}_{control_list[5]}'.encode(FORMAT)
@@ -75,6 +76,11 @@ def syringe_set_d(sid,diameter):
 def syringe_clear(sid):
     endpoint = f"{SERVER}/syringe/{sid}/clear"
     req.post(endpoint)
+def imgask():
+    endpoint = f"{SERVER}/api/microscope/image"
+    response = req.get(endpoint)
+    img = Image.fromarray(np.array(response.content))
+    return img
 ########################### File Management ############################
 active_chamber = 0
 # create a list of chamber names 
@@ -177,15 +183,16 @@ while True:
             log(f'The user passed syringe control: {syringe_operation(syr_win_2)}')     # log the operation of the syringes
             if syringe_operation(syr_win_2) != ('None',0,0,0,0,0):                      # if the user actually selected something
                 send_syringe_control(syr_win_2)                        # send the operation to the server
-    if not graphing:                                                    # image update 
+    if not graphing:      
+        image = imgask()                                            # image update 
         # chamber_info_img.update('Live video feed from Chamber {}'.format(active_chamber+1))           #                 
         # log(f'Trying to update image of type {type(image_data)}')       # log the attempt
         # if isinstance(image_data, bytes):                               # if the image data is bytes, change it to bytes IO
         #     image_data = io.BytesIO(image_data)
         # image = Image.open(image_data)                                  # open the image
-        # bio = io.BytesIO()                                              # create a bytes IO object
-        # image.save(bio, format='PNG')                                   # save the image to the bytes IO object
-        # image_elem.update(data=bio.getvalue())                          # update the image element
+        bio = io.BytesIO()                                              # create a bytes IO object
+        image.save(bio, format='PNG')                                   # save the image to the bytes IO object
+        image_elem.update(data=bio.getvalue())                          # update the image element
         pass
     elif graphing: 
         chamber_info_plt.update('Graph of data from Chamber {}'.format(active_chamber+1))
