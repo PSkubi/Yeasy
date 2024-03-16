@@ -40,10 +40,10 @@ class Syringe:
         # receives syringes response
         buffer = b''
         while not buffer.endswith(ETX): # keep listening until you receive ETX byte
-            response_byte = self.conn.read()
+            response_byte = self.conn.read(1)
             buffer += response_byte
         
-        response = buffer[1:-1]
+        response = buffer.split(STX)[-1].split(ETX)[0]
         return response
     
     def run(self, phase_number=1):
@@ -108,6 +108,10 @@ class Syringe:
 
     def set_phase(self, phase_number: int):
         response = self.send_command("PHN", phase_number)
+        return response
+
+    def set_dir(self, direction):
+        response = self.send_command("DIR", direction)
         return response
 
     def create_pumping_phase(self, rate, units, vol, dir="INF", phase_number=-1):
