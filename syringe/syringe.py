@@ -83,7 +83,7 @@ class Syringe:
         if volume is None:
             return # TODO add an error statement
 
-        response = self.send_command("VOL", volume)
+        response = self.send_command("FUN VOL", volume)
         return response
     
     def set_direction(self, direction: str):
@@ -91,7 +91,7 @@ class Syringe:
         if direction not in valid_directions:
             return # TODO add an error statement 
 
-        response = self.send_command("DIR", direction)
+        response = self.send_command("FUN DIR", direction)
         return response
 
     def set_rate(self, rate: float, units: str):
@@ -103,15 +103,11 @@ class Syringe:
         if rate is None:
             return # TODO add an error statement
         
-        response = self.send_command("RAT", rate, units)
+        response = self.send_command("FUN RAT", rate, units)
         return response
 
     def set_phase(self, phase_number: int):
         response = self.send_command("PHN", phase_number)
-        return response
-
-    def set_dir(self, direction):
-        response = self.send_command("DIR", direction)
         return response
 
     def create_pumping_phase(self, rate, units, vol, dir="INF", phase_number=-1):
@@ -122,7 +118,7 @@ class Syringe:
         self.set_phase(phase_number)        
         self.set_rate(rate, units)
         self.set_volume(vol) # volume units are determined by rate units
-        self.set_dir(dir)
+        self.set_direction(dir)
 
         self.phase_count += 1
         return
