@@ -155,9 +155,9 @@ while True:
         window['chamber_info_plt'].update(visible=False)
         window.Maximize()
         window['-COL1-'].expand(expand_x=True, expand_y=True, expand_row=False)
-    # elif event in (sg.TIMEOUT_EVENT) and not graphing:
-    #     image_data = ask_img()
-    #     log(f'Image data loaded: size <<{len(image_data)}>>')
+    elif event in (sg.TIMEOUT_EVENT) and not graphing:
+        image= imgask()
+        log(f'Image data loaded>>')
     elif event == 'Graph':                                              # the graph button opens the graph    
         graphing = True
         read_datafiles()
@@ -184,7 +184,7 @@ while True:
             if syringe_operation(syr_win_2) != ('None',0,0,0,0,0):                      # if the user actually selected something
                 send_syringe_control(syr_win_2)                        # send the operation to the server
     if not graphing:      
-        image = imgask()                                            # image update 
+        #image = imgask()                                            # image update 
         # chamber_info_img.update('Live video feed from Chamber {}'.format(active_chamber+1))           #                 
         # log(f'Trying to update image of type {type(image_data)}')       # log the attempt
         # if isinstance(image_data, bytes):                               # if the image data is bytes, change it to bytes IO
