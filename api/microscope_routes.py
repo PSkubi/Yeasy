@@ -1,7 +1,7 @@
 from flask import Blueprint, request
 from .microscope import Microscope
 
-api = Blueprint("backend", __name__)
+microscope_api = Blueprint("backend", __name__)
 
 microscope = Microscope()
 

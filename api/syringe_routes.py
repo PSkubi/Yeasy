@@ -1,7 +1,7 @@
 from flask import Blueprint, request
 from .syringe_controller import SyringeController
 
-api = Blueprint("backend", __name__)
+syringe_api = Blueprint("backend", __name__)
 
 syringe_controller = SyringeController()
 
