@@ -104,7 +104,7 @@ def read_datafiles():
 
 ################################# The layout ##################################
 #filename = os.path.join(os.getcwd(), 'Original Image Read\\waiting.jpg')    # Load the waiting image
-waiting_image = os.path.join(os.getcwd(), 'waiting.jpg')    # Load the waiting image
+waiting_image = os.path.join(os.getcwd(), 'Original Image Read\\waiting.jpg')    # Load the waiting image
 #waiting_image='C:\\Users\\piotr\OneDrive - Imperial College London\\Yeasy\\YeasyImageRead\\Original Image Read\\waiting.jpg'
 
 image_elem = sg.Image(data=get_img_data(waiting_image, first=True))              # Create the image element
