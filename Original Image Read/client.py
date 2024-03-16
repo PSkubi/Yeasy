@@ -39,7 +39,7 @@ log(f'Loaded setup: Server IP is {setup[0]}, number of chambers is {setup[1]}, n
 ########################## Constant values setup ############################
 # HEADER = 32                                             # length of the header message
 # PORT = 5050                                             # port number                                 
-SERVER = setup[0]                                       # server IP address
+SERVER = f"http://{setup[0]}/api"                         # api base route from server IP address
 # ADDR = (SERVER, PORT)                                   # address of the server
 # FORMAT = 'utf-8'                                        # format of the message
 # DISCONNECT_MESSAGE = "!DISCONNECT"                      # disconnect message       
