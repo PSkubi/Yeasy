@@ -79,8 +79,8 @@ def syringe_clear(sid):
 def imgask():
     endpoint = f"{SERVER}/api/microscope/image"
     response = req.get(endpoint)
-    img = Image.fromarray(np.array(response.content))
-    return img
+    img_array = np.array(response.content)
+    return img_array
 ########################### File Management ############################
 active_chamber = 0
 # create a list of chamber names 
@@ -156,7 +156,10 @@ while True:
         window.Maximize()
         window['-COL1-'].expand(expand_x=True, expand_y=True, expand_row=False)
     elif event in (sg.TIMEOUT_EVENT) and not graphing:
-        image= imgask()
+        img_array = imgask()
+        image = Image.fromarray(img_array)
+        image_tiff = io.BytesIO()
+        image.save(image_tiff, format='TIFF')
         log(f'Image data loaded>>')
     elif event == 'Graph':                                              # the graph button opens the graph    
         graphing = True
