@@ -90,6 +90,14 @@ def count_all_chambers():
         cell_numbers,area_list = cell_counting(i+1)
         counting_list.append(cell_numbers)
     return counting_list
+def getarguments(arg_list,active_chamber):
+    arg_time_list_1 = []
+    arg_time_list_2 = []
+    for i in range(len(arg_list)):
+        arg_time_list_1.append(arg_list[i][active_chamber][0])
+        arg_time_list_2.append(arg_list[i][active_chamber][1])
+    return arg_time_list_1,arg_time_list_2
+
 ########################### File Management ############################
 active_chamber = 0
 # create a list of chamber names 
@@ -108,15 +116,15 @@ Values_list = []
 #     log(f'Loaded values file: {Values_files[i]}')
 
 # Use csv reader to read the numerical data from those two files
-def read_datafiles():
-    global plotarguments
-    global plotvalues
-    with open(Arguments_files[active_chamber], 'r') as file:
-        plotarguments = next(csv.reader(file))
-    plotarguments = [int(x) for x in plotarguments]
-    with open(Values_files[active_chamber], 'r') as file:
-        plotvalues = next(csv.reader(file))
-    plotvalues = [int(y) for y in plotvalues]
+# def read_datafiles():
+#     global plotarguments
+#     global plotvalues
+#     with open(Arguments_files[active_chamber], 'r') as file:
+#         plotarguments = next(csv.reader(file))
+#     plotarguments = [int(x) for x in plotarguments]
+#     with open(Values_files[active_chamber], 'r') as file:
+#         plotvalues = next(csv.reader(file))
+#     plotvalues = [int(y) for y in plotvalues]
 
 ################################# The layout ##################################
 #filename = os.path.join(BASE_DIR, 'Original Image Read\\waiting.jpg')    # Load the waiting image
@@ -145,7 +153,7 @@ layout = [[sg.Column(leftcol,expand_x=True), sg.Column(imgcol, key='-COL1-',expa
 ################################# The main loop ###################################
 graphing = False
 window = sg.Window('Yeasy', layout, return_keyboard_events=True,size=(1920,1080),location=(0, 0), use_default_focus=True, finalize=True,keep_on_top=False,resizable=True).Finalize()
-read_datafiles()
+#read_datafiles()
 window['-COL2-'].expand(expand_x=True, expand_y=True, expand_row=False)
 figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(plotarguments,plotvalues))
 clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas)
@@ -183,20 +191,22 @@ while True:
             Arguments_list.append(time.time() - start)
     elif event == 'Graph':                                              # the graph button opens the graph    
         graphing = True
-        read_datafiles()
+        #read_datafiles()
+        green_arguments,orange_arguments = getarguments(Arguments_list,active_chamber)
         window['-COL1-'].update(visible=False)
         window['-COL2-'].update(visible=True)
         window['chamber_info_plt'].update(visible=True)
-        figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(plotarguments,plotvalues))
+        figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(Values_list,green_arguments,orange_arguments))
         window.maximize()
         window['-COL2-'].expand(expand_x=True, expand_y=True, expand_row=False)
     elif event == 'listbox':                                            # something from the list of chambers
         active_chamber = c_list.index(values["listbox"][0])             # change the active chamber
         log(f'Changed active chamber to {active_chamber+1}')            # log the change
         if graphing:
-            read_datafiles()
+            #read_datafiles()
+            green_arguments,orange_arguments = getarguments(Arguments_list,active_chamber)
             clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas)
-            figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(plotarguments,plotvalues))
+            figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(Values_list,green_arguments,orange_arguments))
             window['-CANVAS-'].expand(expand_x=True, expand_y=True, expand_row=False)
     elif event =='Syringe control':                                     # if the user clicks on the syringe control button
         syr_win_1 = syringewindow1()                                    # open the first syringe control window
