@@ -16,7 +16,7 @@ from real_sample import *
 from real_sample_counting import *
 import cv2
 ImageFile.LOAD_TRUNCATED_IMAGES = True
-start = time.time() # Hello s
+start = time.time() # Hello world!
 counting_timer = time.time()
 def log(msg):
     print(f'{round(time.time() - start,2)}: {msg}')
