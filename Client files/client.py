@@ -12,6 +12,9 @@ from Image_reading import *
 from Syringe_control import *
 import requests as req
 import numpy as np  
+from real_sample import *
+from real_sample_counting import *
+import cv2
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 start = time.time()
 
@@ -21,7 +24,7 @@ def setupwindow():
     layout = [
         [sg.Text(f'Please select the settings for the program')],
         [[sg.Text('Server IP:')],[sg.Input(f'{socket.gethostbyname(socket.gethostname())}',size=(20, 10),key='-Server IP-')]],
-        [[sg.Text('Number of chambers')],[sg.Input('20',size=(20, 10),key='-Chamber no-')]],
+        [[sg.Text('Number of chambers')],[sg.Input('30',size=(20, 10),key='-Chamber no-')]],
         [[sg.Text('Number of syringes')],[sg.Input('3',size=(20, 10),key='-Syringe no-')]],
         [sg.Button('Cancel', size=(10,4)),sg.Button('Confirm',size=(10,4))]
     ]
@@ -81,6 +84,12 @@ def imgask():
     response = req.get(endpoint)
     img_array = np.array(response.content)
     return img_array
+def count_all_chambers():
+    counting_list = []
+    for i in range(chamber_number):
+        cell_numbers,area_list = cell_counting(i+1)
+        counting_list.append(cell_numbers)
+    return counting_list
 ########################### File Management ############################
 active_chamber = 0
 # create a list of chamber names 
@@ -161,6 +170,11 @@ while True:
         image_tiff = io.BytesIO()
         image.save(image_tiff, format='TIFF')
         log(f'Image data loaded>>')
+        # save the image as a tif file
+        whole_image_tif_path = os.path.join(os.cwd(),'Image_files\\whole_image.tif')
+        image_tiff.save(whole_image_tif_path)
+        sample_read(whole_image_tif_path,chamber_number)
+
     elif event == 'Graph':                                              # the graph button opens the graph    
         graphing = True
         read_datafiles()

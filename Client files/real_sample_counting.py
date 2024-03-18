@@ -1,9 +1,8 @@
 import cv2
 import math
 
-def cell_counting():
+def cell_counting(chamber_no):
     #get the chamber_num and get the prepared masks
-    chamber_no = input("Enter the number of chamber:")
     chamber = 'chamber' + chamber_no + '.tif'
     chamber_img = cv2.imread(chamber)
     green_mask = 'chamber' + chamber_no + ' dil_green.tif'
@@ -36,6 +35,8 @@ def cell_counting():
     minimum_cell_area = 30
 
     #counting the cell and draw the detected contour
+    cell_numbers = []
+    area_list = []
     for i in range(0,len(mask)):
         cells = 0
         contour_color=[(0,128,0),(0,128,255)]
@@ -50,6 +51,8 @@ def cell_counting():
                     cells += math.floor(area / average_cell_area)
                 else:
                     cells += 1
+            cell_numbers.append(cells)
+            area_list.append(sum_area)
 
         print(mask_name[i]+'Cells: {}'.format(cells))
         print(mask_name[i]+'Area: {}'.format(sum_area))
@@ -59,3 +62,4 @@ def cell_counting():
 
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+    return cell_numbers, area_list
