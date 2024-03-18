@@ -17,7 +17,7 @@ from real_sample_counting import *
 import cv2
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 start = time.time()
-
+counting_timer = time.time()
 def log(msg):
     print(f'{round(time.time() - start,2)}: {msg}')
 def setupwindow():
@@ -97,15 +97,15 @@ c_list = []
 for i in range(chamber_number):
     c_list.append('Chamber '+str(i+1))
 # Load the arguments and values from the csv files
-Arguments_files = []
-Values_files = []
-for i in range(3):
-    #Arguments_files.append(os.path.join(BASE_DIR, f'C:\\Users\\piotr\\OneDrive - Imperial College London\\Yeasy\\YeasyImageRead\\Original Image Read\\Data\\Chamber {i+1} data\\YeastDataArguments.csv'))
-    #Values_files.append(os.path.join(BASE_DIR, f'C:\\Users\\piotr\\OneDrive - Imperial College London\\Yeasy\\YeasyImageRead\\Original Image Read\\Data\\Chamber {i+1} data\\YeastDataValues.csv'))
-    Arguments_files.append(os.path.join(BASE_DIR, f'Data/Chamber {i+1} data/YeastDataArguments.csv'))
-    Values_files.append(os.path.join(BASE_DIR, f'Data/Chamber {i+1} data/YeastDataValues.csv'))
-    log(f'Loaded arguments files: {Arguments_files[i]}')
-    log(f'Loaded values file: {Values_files[i]}')
+Arguments_list = []
+Values_list = []
+# for i in range(3):
+#     #Arguments_files.append(os.path.join(BASE_DIR, f'C:\\Users\\piotr\\OneDrive - Imperial College London\\Yeasy\\YeasyImageRead\\Original Image Read\\Data\\Chamber {i+1} data\\YeastDataArguments.csv'))
+#     #Values_files.append(os.path.join(BASE_DIR, f'C:\\Users\\piotr\\OneDrive - Imperial College London\\Yeasy\\YeasyImageRead\\Original Image Read\\Data\\Chamber {i+1} data\\YeastDataValues.csv'))
+#     Arguments_files.append(os.path.join(BASE_DIR, f'Data/Chamber {i+1} data/YeastDataArguments.csv'))
+#     Values_files.append(os.path.join(BASE_DIR, f'Data/Chamber {i+1} data/YeastDataValues.csv'))
+#     log(f'Loaded arguments files: {Arguments_files[i]}')
+#     log(f'Loaded values file: {Values_files[i]}')
 
 # Use csv reader to read the numerical data from those two files
 def read_datafiles():
@@ -174,7 +174,13 @@ while True:
         whole_image_tif_path = os.path.join(os.cwd(),'Image_files\\whole_image.tif')
         image_tiff.save(whole_image_tif_path)
         sample_read(whole_image_tif_path,chamber_number)
-
+        user_image = Image.open(f'Image_files\\chamber{active_chamber}.tif')
+        if time.time() - counting_timer > 60:
+            counting_timer = time.time()
+            cell_numbers,area_list = count_all_chambers()
+            log(f'Counted cells in chambers')
+            Values_list.append(cell_numbers)
+            Arguments_list.append(time.time() - start)
     elif event == 'Graph':                                              # the graph button opens the graph    
         graphing = True
         read_datafiles()
@@ -184,15 +190,14 @@ while True:
         figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(plotarguments,plotvalues))
         window.maximize()
         window['-COL2-'].expand(expand_x=True, expand_y=True, expand_row=False)
-    # elif event == 'listbox':                                            # something from the list of chambers
-    #     active_chamber = c_list.index(values["listbox"][0])             # change the active chamber
-    #     log(f'Changed active chamber to {active_chamber+1}')            # log the change
-    #     change_chamber(active_chamber)                                  # send the change to the server
-    #     if graphing:
-    #         read_datafiles()
-    #         clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas)
-    #         figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(plotarguments,plotvalues))
-    #         window['-CANVAS-'].expand(expand_x=True, expand_y=True, expand_row=False)
+    elif event == 'listbox':                                            # something from the list of chambers
+        active_chamber = c_list.index(values["listbox"][0])             # change the active chamber
+        log(f'Changed active chamber to {active_chamber+1}')            # log the change
+        if graphing:
+            read_datafiles()
+            clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas)
+            figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(plotarguments,plotvalues))
+            window['-CANVAS-'].expand(expand_x=True, expand_y=True, expand_row=False)
     elif event =='Syringe control':                                     # if the user clicks on the syringe control button
         syr_win_1 = syringewindow1()                                    # open the first syringe control window
         if syr_win_1 != []:
@@ -208,7 +213,7 @@ while True:
         #     image_data = io.BytesIO(image_data)
         # image = Image.open(image_data)                                  # open the image
         bio = io.BytesIO()                                              # create a bytes IO object
-        image.save(bio, format='PNG')                                   # save the image to the bytes IO object
+        user_image.save(bio, format='PNG')                                   # save the image to the bytes IO object
         image_elem.update(data=bio.getvalue())                          # update the image element
         pass
     elif graphing: 
