@@ -155,8 +155,6 @@ graphing = False
 window = sg.Window('Yeasy', layout, return_keyboard_events=True,size=(1920,1080),location=(0, 0), use_default_focus=True, finalize=True,keep_on_top=False,resizable=True).Finalize()
 #read_datafiles()
 window['-COL2-'].expand(expand_x=True, expand_y=True, expand_row=False)
-figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(plotarguments,plotvalues))
-clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas)
 window['chamber_info_plt'].update(visible=False)
 window.Maximize()
 
@@ -173,7 +171,10 @@ while True:
         window.Maximize()
         window['-COL1-'].expand(expand_x=True, expand_y=True, expand_row=False)
     elif event in (sg.TIMEOUT_EVENT) and not graphing:
-        img_array = imgask()
+        try:
+            img_array = imgask()
+        except:
+            sg.popup('Connection error')
         image = Image.fromarray(img_array)
         image_tiff = io.BytesIO()
         image.save(image_tiff, format='TIFF')
