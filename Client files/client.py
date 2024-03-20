@@ -193,7 +193,7 @@ while True:
         window['-COL1-'].update(visible=False)
         window['-COL2-'].update(visible=True)
         window['chamber_info_plt'].update(visible=True)
-        figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(Values_list,green_values,orange_values))
+        figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(Arguments_list,green_values,orange_values))
         window.maximize()
         window['-COL2-'].expand(expand_x=True, expand_y=True, expand_row=False)
     elif event == 'listbox':                                            # something from the list of chambers
@@ -201,9 +201,9 @@ while True:
         log(f'Changed active chamber to {active_chamber+1}')            # log the change
         if graphing:
             #read_datafiles()
-            green_arguments,orange_arguments = getvalues(Arguments_list,active_chamber)
+            green_values,orange_values = getvalues(Arguments_list,active_chamber)
             clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas)
-            figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(Values_list,green_arguments,orange_arguments))
+            figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(Arguments_list,green_values,orange_values))
             window['-CANVAS-'].expand(expand_x=True, expand_y=True, expand_row=False)
     elif event =='Syringe control':                                     # if the user clicks on the syringe control button
         syr_win_1 = syringewindow1()                                    # open the first syringe control window
