@@ -42,20 +42,14 @@ def setupwindow():
 setup = setupwindow()
 log(f'Loaded setup: Server IP is {setup[0]}, number of chambers is {setup[1]}, number of syringes is {setup[2]}') 
 ########################## Constant values setup ############################
-# HEADER = 32                                             # length of the header message
-# PORT = 5050                                             # port number                                 
+                             
 SERVER = f"http://{setup[0]}/api"                         # api base route from server IP address
 BASE_DIR = os.path.dirname(__file__)                      # base directory for relative paths
 image_files_folder = os.path.join(BASE_DIR,'Image_files') # folder for the image files
-whole_image_tif_path = os.path.join(image_files_folder,'whole_image.tif') # Create a path for the whole image tif file
-# ADDR = (SERVER, PORT)                                   # address of the server
-# FORMAT = 'utf-8'                                        # format of the message
-# DISCONNECT_MESSAGE = "!DISCONNECT"                      # disconnect message       
+whole_image_tif_path = os.path.join(image_files_folder,'whole_image.tif') # Create a path for the whole image tif file     
 chamber_number = int(setup[1])                          # number of chambers                          
 syringe_number = int(setup[2])                          # number of syringes
 control_dict={'Volume':0,'Duration':1,'µL':2, 'mL':3, 'L':4,'minutes':5,'hours':6,'µL/min':'UM', 'mL/min':'MM', 'µL/hr':'UH', 'mL/hr':'MH'} # dictionary for the control type encoding
-# client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # create a client socket
-# client.connect(ADDR)                                        # connect to the server
 
 def send_syringe_control(control_list):
     '''Send instructions to a syringe based on the control list'''
@@ -68,9 +62,6 @@ def send_syringe_control(control_list):
     new_phase = {'rate':control_list[2],'units':control_list[4],'direction':"INF",'volume':control_list[3]}
     endpoint = f"{SERVER}/syringe/{control_list[1]}/pump_phase"
     req.post(endpoint, new_phase) 
-    # msg = f'syr_{control_list[0]}_{control_list[1]}_{control_list[2]}_{control_list[3]}_{control_list[4]}_{control_list[5]}'.encode(FORMAT)
-    # msg += b' ' * (HEADER - len(msg))
-    # client.send(msg)
 def stop_syringe(syringe_id):
     '''Send a message to the syringe asking to stop a syringe with a given id'''
     endpoint = f"{SERVER}/syringe/{syringe_id}/stop"
@@ -118,9 +109,7 @@ for i in range(chamber_number):
 Arguments_list = []
 Values_list = []
 ################################# The layout ##################################
-#filename = os.path.join(BASE_DIR, 'Original Image Read\\waiting.jpg')    # Load the waiting image
 waiting_image = os.path.join(BASE_DIR, 'waiting.jpg')    # Load the waiting image
-#waiting_image='C:\\Users\\piotr\OneDrive - Imperial College London\\Yeasy\\YeasyImageRead\\Original Image Read\\waiting.jpg'
 
 image_elem = sg.Image(data=get_img_data(waiting_image, first=True))              # Create the image element
 

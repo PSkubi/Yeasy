@@ -1,3 +1,9 @@
+# HEADER = 32                                             # length of the header message
+# client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # create a client socket
+# client.connect(ADDR)                                        # connect to the server
+# ADDR = (SERVER, PORT)                                   # address of the server
+# FORMAT = 'utf-8'                                        # format of the message
+# DISCONNECT_MESSAGE = "!DISCONNECT"                      # disconnect message  # PORT = 5050                                             # port number    
 ########################## Sending data to the server ############################
 # def send_string(msg):
 #     message = msg.encode(FORMAT)                        # encode the message
