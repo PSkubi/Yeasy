@@ -23,4 +23,9 @@ def image_to_bytes(image_path):
         image_bytes = image_bytes.getvalue()
     return image_bytes
 if __name__ == '__main__':
-    print(os.getcwd())
+    BASE_DIR = os.path.dirname(__file__)                      # base directory for relative paths
+    image_files_folder = os.path.join(BASE_DIR,'Image_files') # folder for the image files
+    print('')
+    print(image_files_folder) # folder for the image files)
+    print('')
+    print(os.path.join(image_files_folder,'whole_image.tif'))

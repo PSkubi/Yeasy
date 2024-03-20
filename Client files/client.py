@@ -15,6 +15,7 @@ import numpy as np
 from real_sample import *
 from real_sample_counting import *
 import cv2
+import glob
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 start = time.time() # Hello world!
 counting_timer = time.time()
@@ -44,7 +45,8 @@ log(f'Loaded setup: Server IP is {setup[0]}, number of chambers is {setup[1]}, n
 # HEADER = 32                                             # length of the header message
 # PORT = 5050                                             # port number                                 
 SERVER = f"http://{setup[0]}/api"                         # api base route from server IP address
-BASE_DIR = os.path.dirname(__file__)                           # base directory for relative paths
+BASE_DIR = os.path.dirname(__file__)                      # base directory for relative paths
+image_files_folder = os.path.join(BASE_DIR,'Image_files') # folder for the image files
 # ADDR = (SERVER, PORT)                                   # address of the server
 # FORMAT = 'utf-8'                                        # format of the message
 # DISCONNECT_MESSAGE = "!DISCONNECT"                      # disconnect message       
@@ -172,24 +174,30 @@ while True:
         window['-COL1-'].expand(expand_x=True, expand_y=True, expand_row=False)
     elif event in (sg.TIMEOUT_EVENT) and not graphing:
         try:
-            img_array = imgask()
+            img_array = imgask()                        # ask the server for the image data
+            image = Image.fromarray(img_array)
+            image_tiff = io.BytesIO()
+            image.save(image_tiff, format='TIFF')
+            log(f'Image data loaded>>')
+            image_files = glob.glob(image_files_folder+'\\*.tif')
+            for file in image_files:
+                os.remove(file)                             # Clean the Image_files folder before saving new files
+            log(f'Cleaned the Image_files folder')
+            # save the image as a tif file
+            whole_image_tif_path = os.path.join(image_files_folder,'whole_image.tif')
+            image_tiff.save(whole_image_tif_path)
+            log(f'Saved the whole image as a tif file')
+            sample_read(whole_image_tif_path,chamber_number)
+            user_image = Image.open(f'Image_files\\chamber{active_chamber}.tif')
+            if time.time() - counting_timer > 60:
+                log(f'Trying to count cells in all chambers')
+                counting_timer = time.time()
+                cell_numbers,area_list = count_all_chambers()
+                log(f'Counted cells in chambers')
+                Values_list.append(cell_numbers)
+                Arguments_list.append(time.time() - start)
         except:
-            sg.popup('Connection error')
-        image = Image.fromarray(img_array)
-        image_tiff = io.BytesIO()
-        image.save(image_tiff, format='TIFF')
-        log(f'Image data loaded>>')
-        # save the image as a tif file
-        whole_image_tif_path = os.path.join(os.cwd(),'Image_files\\whole_image.tif')
-        image_tiff.save(whole_image_tif_path)
-        sample_read(whole_image_tif_path,chamber_number)
-        user_image = Image.open(f'Image_files\\chamber{active_chamber}.tif')
-        if time.time() - counting_timer > 60:
-            counting_timer = time.time()
-            cell_numbers,area_list = count_all_chambers()
-            log(f'Counted cells in chambers')
-            Values_list.append(cell_numbers)
-            Arguments_list.append(time.time() - start)
+            sg.popup('Connection error')                # throw a popup if that fails
     elif event == 'Graph':                                              # the graph button opens the graph    
         graphing = True
         #read_datafiles()
@@ -218,7 +226,7 @@ while True:
                 send_syringe_control(syr_win_2)                        # send the operation to the server
     if not graphing:      
         #image = imgask()                                            # image update 
-        # chamber_info_img.update('Live video feed from Chamber {}'.format(active_chamber+1))           #                 
+        chamber_info_img.update('Live video feed from Chamber {}'.format(active_chamber+1))           #                 
         # log(f'Trying to update image of type {type(image_data)}')       # log the attempt
         # if isinstance(image_data, bytes):                               # if the image data is bytes, change it to bytes IO
         #     image_data = io.BytesIO(image_data)
