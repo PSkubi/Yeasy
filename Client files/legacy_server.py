@@ -27,3 +27,21 @@
 #     msg_info = f'chamber_{number}'.encode(FORMAT)       # encode the 'chamber_{number}' string)              
 #     msg_info += b' ' * (HEADER - len(msg_info))         # add spaces to the length of the message to make it 32 bytes
 #     client.send(msg_info)
+# for i in range(3):
+#     #Arguments_files.append(os.path.join(BASE_DIR, f'C:\\Users\\piotr\\OneDrive - Imperial College London\\Yeasy\\YeasyImageRead\\Original Image Read\\Data\\Chamber {i+1} data\\YeastDataArguments.csv'))
+#     #Values_files.append(os.path.join(BASE_DIR, f'C:\\Users\\piotr\\OneDrive - Imperial College London\\Yeasy\\YeasyImageRead\\Original Image Read\\Data\\Chamber {i+1} data\\YeastDataValues.csv'))
+#     Arguments_files.append(os.path.join(BASE_DIR, f'Data/Chamber {i+1} data/YeastDataArguments.csv'))
+#     Values_files.append(os.path.join(BASE_DIR, f'Data/Chamber {i+1} data/YeastDataValues.csv'))
+#     log(f'Loaded arguments files: {Arguments_files[i]}')
+#     log(f'Loaded values file: {Values_files[i]}')
+
+# Use csv reader to read the numerical data from those two files
+# def read_datafiles():
+#     global plotarguments
+#     global plotvalues
+#     with open(Arguments_files[active_chamber], 'r') as file:
+#         plotarguments = next(csv.reader(file))
+#     plotarguments = [int(x) for x in plotarguments]
+#     with open(Values_files[active_chamber], 'r') as file:
+#         plotvalues = next(csv.reader(file))
+#     plotvalues = [int(y) for y in plotvalues]
