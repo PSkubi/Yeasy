@@ -100,15 +100,14 @@ def count_all_chambers():
         cell_numbers,area_list = cell_counting(i+1)
         counting_list.append(cell_numbers)
     return counting_list
-def getarguments(arg_list,active_chamber):
-    '''Get argument lists for a given chamber from a list of argument lists'''
-    arg_time_list_1 = []
-    arg_time_list_2 = []
-    for i in range(len(arg_list)):
-        arg_time_list_1.append(arg_list[i][active_chamber][0])
-        arg_time_list_2.append(arg_list[i][active_chamber][1])
-    return arg_time_list_1,arg_time_list_2
-
+def getvalues(value_list,active_chamber):
+    '''Get value lists for a given chamber from a list of values lists'''
+    value_time_list_1 = []
+    value_time_list_2 = []
+    for i in range(len(value_list)):
+        value_time_list_1.append(value_list[i][active_chamber][0])
+        value_time_list_2.append(value_list[i][active_chamber][1])
+    return value_time_list_1,value_time_list_2
 ########################### File Management ############################
 active_chamber = 0
 # create a list of chamber names 
@@ -190,11 +189,11 @@ while True:
     elif event == 'Graph':                                              # the graph button opens the graph    
         graphing = True
         #read_datafiles()
-        green_arguments,orange_arguments = getarguments(Arguments_list,active_chamber)
+        green_values,orange_values = getvalues(Values_list,active_chamber)
         window['-COL1-'].update(visible=False)
         window['-COL2-'].update(visible=True)
         window['chamber_info_plt'].update(visible=True)
-        figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(Values_list,green_arguments,orange_arguments))
+        figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(Values_list,green_values,orange_values))
         window.maximize()
         window['-COL2-'].expand(expand_x=True, expand_y=True, expand_row=False)
     elif event == 'listbox':                                            # something from the list of chambers
