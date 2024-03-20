@@ -201,7 +201,7 @@ while True:
         log(f'Changed active chamber to {active_chamber+1}')            # log the change
         if graphing:
             #read_datafiles()
-            green_arguments,orange_arguments = getarguments(Arguments_list,active_chamber)
+            green_arguments,orange_arguments = getvalues(Arguments_list,active_chamber)
             clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas)
             figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(Values_list,green_arguments,orange_arguments))
             window['-CANVAS-'].expand(expand_x=True, expand_y=True, expand_row=False)
