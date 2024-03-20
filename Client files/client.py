@@ -47,6 +47,7 @@ log(f'Loaded setup: Server IP is {setup[0]}, number of chambers is {setup[1]}, n
 SERVER = f"http://{setup[0]}/api"                         # api base route from server IP address
 BASE_DIR = os.path.dirname(__file__)                      # base directory for relative paths
 image_files_folder = os.path.join(BASE_DIR,'Image_files') # folder for the image files
+whole_image_tif_path = os.path.join(image_files_folder,'whole_image.tif') # Create a path for the whole image tif file
 # ADDR = (SERVER, PORT)                                   # address of the server
 # FORMAT = 'utf-8'                                        # format of the message
 # DISCONNECT_MESSAGE = "!DISCONNECT"                      # disconnect message       
@@ -57,6 +58,7 @@ control_dict={'Volume':0,'Duration':1,'µL':2, 'mL':3, 'L':4,'minutes':5,'hours'
 # client.connect(ADDR)                                        # connect to the server
 
 def send_syringe_control(control_list):
+    '''Send instructions to a syringe based on the control list'''
     for i in (0,4,5):
         try:
             control_list[i] = control_dict[control_list[i]]
@@ -69,30 +71,37 @@ def send_syringe_control(control_list):
     # msg = f'syr_{control_list[0]}_{control_list[1]}_{control_list[2]}_{control_list[3]}_{control_list[4]}_{control_list[5]}'.encode(FORMAT)
     # msg += b' ' * (HEADER - len(msg))
     # client.send(msg)
-def stop_syringe(sid):
-    endpoint = f"{SERVER}/syringe/{sid}/stop"
+def stop_syringe(syringe_id):
+    '''Send a message to the syringe asking to stop a syringe with a given id'''
+    endpoint = f"{SERVER}/syringe/{syringe_id}/stop"
     req.post(endpoint)
-def run_syringe(sid):
-    endpoint = f"{SERVER}/syringe/{sid}/run"
+def run_syringe(syringe_id):
+    '''Send a message to the syringe asking to run a syringe with a given id'''
+    endpoint = f"{SERVER}/syringe/{syringe_id}/run"
     req.post(endpoint)
-def syringe_set_d(sid,diameter):
-    endpoint = f"{SERVER}/syringe/{sid}/diameter"
+def syringe_set_d(syringe_id,diameter):
+    '''Send a message to the syringe asking to set the diameter of a syringe with a given id'''
+    endpoint = f"{SERVER}/syringe/{syringe_id}/diameter"
     req.post(endpoint, {'value':diameter})
-def syringe_clear(sid):
-    endpoint = f"{SERVER}/syringe/{sid}/clear"
+def syringe_clear(syringe_id):
+    '''Clears the Pumping Program on the syringe with given id'''
+    endpoint = f"{SERVER}/syringe/{syringe_id}/clear"
     req.post(endpoint)
 def imgask():
+    '''Ask the server for an image, output an array representing the image'''
     endpoint = f"{SERVER}/api/microscope/image"
     response = req.get(endpoint)
     img_array = np.array(response.content)
     return img_array
 def count_all_chambers():
+    '''Count the cells in all chambers, output a 2D list of cell numbers'''
     counting_list = []
     for i in range(chamber_number):
         cell_numbers,area_list = cell_counting(i+1)
         counting_list.append(cell_numbers)
     return counting_list
 def getarguments(arg_list,active_chamber):
+    '''Get argument lists for a given chamber from a list of argument lists'''
     arg_time_list_1 = []
     arg_time_list_2 = []
     for i in range(len(arg_list)):
@@ -106,28 +115,9 @@ active_chamber = 0
 c_list = []
 for i in range(chamber_number):
     c_list.append('Chamber '+str(i+1))
-# Load the arguments and values from the csv files
+# Prepare the lists for data
 Arguments_list = []
 Values_list = []
-# for i in range(3):
-#     #Arguments_files.append(os.path.join(BASE_DIR, f'C:\\Users\\piotr\\OneDrive - Imperial College London\\Yeasy\\YeasyImageRead\\Original Image Read\\Data\\Chamber {i+1} data\\YeastDataArguments.csv'))
-#     #Values_files.append(os.path.join(BASE_DIR, f'C:\\Users\\piotr\\OneDrive - Imperial College London\\Yeasy\\YeasyImageRead\\Original Image Read\\Data\\Chamber {i+1} data\\YeastDataValues.csv'))
-#     Arguments_files.append(os.path.join(BASE_DIR, f'Data/Chamber {i+1} data/YeastDataArguments.csv'))
-#     Values_files.append(os.path.join(BASE_DIR, f'Data/Chamber {i+1} data/YeastDataValues.csv'))
-#     log(f'Loaded arguments files: {Arguments_files[i]}')
-#     log(f'Loaded values file: {Values_files[i]}')
-
-# Use csv reader to read the numerical data from those two files
-# def read_datafiles():
-#     global plotarguments
-#     global plotvalues
-#     with open(Arguments_files[active_chamber], 'r') as file:
-#         plotarguments = next(csv.reader(file))
-#     plotarguments = [int(x) for x in plotarguments]
-#     with open(Values_files[active_chamber], 'r') as file:
-#         plotvalues = next(csv.reader(file))
-#     plotvalues = [int(y) for y in plotvalues]
-
 ################################# The layout ##################################
 #filename = os.path.join(BASE_DIR, 'Original Image Read\\waiting.jpg')    # Load the waiting image
 waiting_image = os.path.join(BASE_DIR, 'waiting.jpg')    # Load the waiting image
@@ -161,41 +151,40 @@ window['chamber_info_plt'].update(visible=False)
 window.Maximize()
 
 while True:
-    event, values = window.read(timeout=250)                            # read the form, set the timeout in miliseconds
-    if event == sg.WIN_CLOSED:                                          # if the window closes - break the loop
+    event, values = window.read(timeout=250)                    # read the form, set the timeout in miliseconds
+    if event == sg.WIN_CLOSED:                                  # if the window closes - break the loop
         break
-    elif event in ('Live view') and graphing:                           # the live view button returns to the live view                                        
+    elif event in ('Live view') and graphing:                   # the live view button returns to the live view if graphing                                        
         graphing = False
-        clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas)
-        window['-COL2-'].update(visible=False)
-        window['-COL1-'].update(visible=True)
-        window['chamber_info_plt'].update(visible=False)
-        window.Maximize()
-        window['-COL1-'].expand(expand_x=True, expand_y=True, expand_row=False)
-    elif event in (sg.TIMEOUT_EVENT) and not graphing:
+        clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas) # clear the canvas
+        window['-COL2-'].update(visible=False)                  # make the canvas column invisible
+        window['-COL1-'].update(visible=True)                   # show the image column
+        window['chamber_info_plt'].update(visible=False)        # make the graph info invisible
+        window.Maximize()                                       # maximise the window
+        window['-COL1-'].expand(expand_x=True, expand_y=True, expand_row=False) # expand the image column
+    elif event in (sg.TIMEOUT_EVENT) and not graphing:          # if user doesn't do anything, update the image
         try:
-            img_array = imgask()                        # ask the server for the image data
-            image = Image.fromarray(img_array)
-            image_tiff = io.BytesIO()
-            image.save(image_tiff, format='TIFF')
-            log(f'Image data loaded>>')
-            image_files = glob.glob(image_files_folder+'\\*.tif')
+            img_array = imgask()                                # ask the server for the image data
+            image = Image.fromarray(img_array)                  # load the image from the array
+            image_tiff = io.BytesIO()                           # create a bytes IO object for storing tiff data
+            image.save(image_tiff, format='TIFF')               # save the image to the bytes IO object
+            log(f'Image data loaded>>')                         
+            image_files = glob.glob(image_files_folder+'\\*.tif') # get the list of tif files in the image_files folder
             for file in image_files:
-                os.remove(file)                             # Clean the Image_files folder before saving new files
+                os.remove(file)                                 # Clean the Image_files folder before saving new files
             log(f'Cleaned the Image_files folder')
             # save the image as a tif file
-            whole_image_tif_path = os.path.join(image_files_folder,'whole_image.tif')
-            image_tiff.save(whole_image_tif_path)
+            image_tiff.save(whole_image_tif_path)               # Save the whole image as a tif file
             log(f'Saved the whole image as a tif file')
-            sample_read(whole_image_tif_path,chamber_number)
-            user_image = Image.open(f'Image_files\\chamber{active_chamber}.tif')
-            if time.time() - counting_timer > 60:
-                log(f'Trying to count cells in all chambers')
-                counting_timer = time.time()
-                cell_numbers,area_list = count_all_chambers()
+            sample_read(whole_image_tif_path,chamber_number)    # split the whole image into chambers
+            user_image = Image.open(f'Image_files\\chamber{active_chamber}.tif') # Open the image of the active chamber
+            if time.time() - counting_timer > 60:               # If more than 60 seconds passed from last counting
+                log(f'Trying to count cells in all chambers')   # try to count the cells
+                counting_timer = time.time()                    # reset the timer
+                cell_numbers,area_list = count_all_chambers()   # count the cells in all chambers
                 log(f'Counted cells in chambers')
-                Values_list.append(cell_numbers)
-                Arguments_list.append(time.time() - start)
+                Values_list.append(cell_numbers)                # append the cell numbers to the values list
+                Arguments_list.append((time.time() - start)/60) # append the time (in mins) to the arguments list
         except:
             sg.popup('Connection error')                # throw a popup if that fails
     elif event == 'Graph':                                              # the graph button opens the graph    
