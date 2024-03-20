@@ -1,9 +1,15 @@
 from flask import Blueprint, request
 from .syringe_controller import SyringeController
+import serial
+from serial.tools import list_ports
 
 syringe_api = Blueprint("backend", __name__)
 
-syringe_controller = SyringeController()
+# connect with syringe hardware port
+ports = list(list_ports.comports())
+s_name = ports[0].device
+port = serial.Serial(s_name)
+syringe_controller = SyringeController(port)
 
 @syringe_api.route("/<int:sid>/status", methods=['GET'])
 def get_status(sid):
