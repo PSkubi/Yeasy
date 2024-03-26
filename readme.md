@@ -8,4 +8,4 @@
 
 3. Install requirements with `pip install -r requirements.txt`.
 
-4. Run the app with `python -m flask --app syringe run --debug`.
+4. Run the app with `python -m flask --app api run --debug`.
