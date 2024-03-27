@@ -20,13 +20,13 @@ def get_status():
 @microscope_api.route("/image", methods=['GET'])
 def get_image():
     if debug:
-        array = np.random.rand(30*500,500)
-        image = (array * 255).astype(np.uint8)
-        image = Image.fromarray(image)
-        byte_arr = io.BytesIO()
-        image.save(byte_arr, format='TIFF')
-        byte_arr = byte_arr.getvalue()
-        return send_file(io.BytesIO(byte_arr), mimetype='image/tiff')
+        array = np.random.rand(500,30*500)                              # Generate an array of random values, size 500x15000
+        image = (array * 255).astype(np.uint8)                          # Convert the array to values from 0 to 255
+        image = Image.fromarray(image)                                  # Create an image from the array
+        byte_arr = io.BytesIO()                                         # Create an empty bytes object    
+        image.save(byte_arr, format='TIFF')                             # Save the image to the bytes object in tiff format
+        byte_arr = byte_arr.getvalue()                                  # Get the value of the bytes object
+        return send_file(io.BytesIO(byte_arr), mimetype='image/tiff')   # Send the bytes object as a file
     else:
         image = microscope.get_image()
         return image
