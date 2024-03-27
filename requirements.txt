@@ -19,6 +19,7 @@ MarkupSafe==2.1.5
 matplotlib==3.8.3
 ndtiff==2.2.1
 numpy==1.26.4
+opencv-python==4.9.0.80
 packaging==24.0
 partd==1.4.1
 pillow==10.2.0
