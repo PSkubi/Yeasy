@@ -1,5 +1,6 @@
-from flask import Blueprint, request
-
+from flask import Blueprint, request,send_file
+from PIL import Image
+import io
 # if debug is True, microscope will not exist 
 # and calls to the api will throw errors.
 # only set debug to True when testing api outside the lab
@@ -17,8 +18,17 @@ def get_status():
 
 @microscope_api.route("/image", methods=['GET'])
 def get_image():
-    image = microscope.get_image()
-    return image
+    if debug:
+        array = np.random.rand(500,500)
+        image = (array * 255).astype(np.uint8)
+        image = Image.fromarray(image)
+        byte_arr = io.BytesIO()
+        image.save(byte_arr, format='TIFF')
+        byte_arr = byte_arr.getvalue()
+        return send_file(io.BytesIO(byte_arr), mimetype='image/tiff')
+    else:
+        image = microscope.get_image()
+        return image
 
 @microscope_api.route("/movestage", methods=['POST'])
 def move_stage():
