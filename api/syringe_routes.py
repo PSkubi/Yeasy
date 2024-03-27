@@ -1,9 +1,21 @@
 from flask import Blueprint, request
-from .syringe_controller import SyringeController
+
+# if debug is True, syringe_controller will not exist 
+# and calls to the api will throw errors.
+# only set debug to True when testing api outside the lab
+debug = False
+if debug == False:
+    from .syringe_controller import SyringeController
+    import serial
+    from serial.tools import list_ports
+
+    # connect with syringe hardware port
+    ports = list(list_ports.comports())
+    s_name = ports[0].device
+    port = serial.Serial(s_name)
+    syringe_controller = SyringeController(port)
 
 syringe_api = Blueprint("backend", __name__)
-
-syringe_controller = SyringeController()
 
 @syringe_api.route("/<int:sid>/status", methods=['GET'])
 def get_status(sid):

@@ -33,7 +33,7 @@ class Syringe:
     
     def send_command(self, command, *parameters, mode="basic"):
         parameters = [str(p) for p in parameters] # convert all parameters to strings with list comprehension (adds new list in place of old list)
-        command_string = f"{self.address}{command}{''.join(parameters)}" # format string joins address and command data together
+        command_string = f"{self.address} {command} {' '.join(parameters)}" # format string joins address and command data together
         command_data = command_string.encode('utf-8') + CR # encodes into bytes and adds carriage return
         self.conn.write(command_data) # sends command to syringe
 
@@ -83,7 +83,7 @@ class Syringe:
         if volume is None:
             return # TODO add an error statement
 
-        response = self.send_command("FUN VOL", volume)
+        response = self.send_command("VOL", volume)
         return response
     
     def set_direction(self, direction: str):
@@ -91,7 +91,7 @@ class Syringe:
         if direction not in valid_directions:
             return # TODO add an error statement 
 
-        response = self.send_command("FUN DIR", direction)
+        response = self.send_command("DIR", direction)
         return response
 
     def set_rate(self, rate: float, units: str):
@@ -103,7 +103,7 @@ class Syringe:
         if rate is None:
             return # TODO add an error statement
         
-        response = self.send_command("FUN RAT", rate, units)
+        response = self.send_command("RAT", rate, units)
         return response
 
     def set_phase(self, phase_number: int):
@@ -115,7 +115,8 @@ class Syringe:
             # just do next phase
             phase_number = self.phase_count+1
 
-        self.set_phase(phase_number)        
+        self.set_phase(phase_number) 
+        self.send_command("FUN RAT")       
         self.set_rate(rate, units)
         self.set_volume(vol) # volume units are determined by rate units
         self.set_direction(dir)

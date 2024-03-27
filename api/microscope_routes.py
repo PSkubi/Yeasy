@@ -1,9 +1,14 @@
 from flask import Blueprint, request
-from .microscope import Microscope
+
+# if debug is True, microscope will not exist 
+# and calls to the api will throw errors.
+# only set debug to True when testing api outside the lab
+debug = False
+if debug == False:
+    from .microscope import Microscope
+    microscope = Microscope()
 
 microscope_api = Blueprint("backend", __name__)
-
-microscope = Microscope()
 
 @microscope_api.route("/status", methods=['GET'])
 def get_status():
