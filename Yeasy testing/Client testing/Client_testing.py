@@ -46,7 +46,7 @@ def setupwindow():
             except:
                 sg.popup('Invalid input! Try again')
                 userinput = [[],[],[]]
-                break
+            break
     setupwindow.close()
     return userinput
 setup = setupwindow()
@@ -430,8 +430,9 @@ def clear_canvas(canvas, figure_canvas_agg):
     figure_canvas_agg.get_tk_widget().destroy()
     plt.close('all')
 ###################### Splitting image thread ################################
+stop_event = threading.Event()
 def split_image():
-    while True:
+    while not stop_event.is_set():
         time.sleep(0.25)
         # Get image
         user_image_full = Image.open(imgask())
@@ -546,3 +547,4 @@ while True:
         chamber_info_plt.update('Graph of data from Chamber {}'.format(active_chamber+1))
     log('Updated window')
 window.close()
+stop_event.set()
