@@ -42,13 +42,19 @@ def run(sid):
 @syringe_api.route("/<int:sid>/pump_phase", methods=['POST'])
 def set_pump_phase(sid):
     """Sets up a whole pumping phase for the syringe with the corresponding sid"""
-    syringe = syringe_controller.Get(sid)
+    if not debug:
+        syringe = syringe_controller.Get(sid)
     rate = request.form.get("rate", type=float)
     units = request.form.get("units", type=str)
     volume = request.form.get("volume", type=float)
     direction = request.form.get("direction", type=str, default="INF")
     phase_number = request.form.get("phase", type=int, default=-1)
-    status = syringe.create_pumping_phase(rate, units, volume, direction, phase_number=phase_number)
+    if not debug:
+        status = syringe.create_pumping_phase(rate, units, volume, direction, phase_number=phase_number)
+    else:
+        status = "Pumping instructions received"
+    print('Pumping instructions received:')
+    print(f'Rate: {rate}, Units: {units}, Volume: {volume}, Direction: {direction}, Phase Number: {phase_number}')
     return status
 
 @syringe_api.route("/<int:sid>/diameter", methods=['POST'])

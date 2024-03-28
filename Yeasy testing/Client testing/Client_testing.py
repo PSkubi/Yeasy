@@ -1,4 +1,3 @@
-import socket
 import time
 import PySimpleGUI as sg
 import os
@@ -22,7 +21,7 @@ def log(msg):
 def setupwindow():
     layout = [
         [sg.Text(f'Please select the settings for the program')],
-        [[sg.Text('Server IP:')],[sg.Input(f'{socket.gethostbyname(socket.gethostname())}',size=(20, 10),key='-Server IP-')]],
+        [[sg.Text('Server IP:')],[sg.Input('127.0.0.1:5000',size=(20, 10),key='-Server IP-')]],
         [[sg.Text('Number of chambers')],[sg.Input('30',size=(20, 10),key='-Chamber no-')]],
         [[sg.Text('Number of syringes')],[sg.Input('3',size=(20, 10),key='-Syringe no-')]],
         [sg.Button('Cancel', size=(10,4)),sg.Button('Confirm',size=(10,4))]
