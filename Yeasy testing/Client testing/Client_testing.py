@@ -41,11 +41,18 @@ def setupwindow():
         if event == 'Cancel' or event == sg.WIN_CLOSED:
             exit() 
         elif event =='Confirm':
-            userinput = [str(values['-Server IP-']),int(values['-Chamber no-']),int(values['-Syringe no-'])]
-            break
+            try:
+                userinput = [str(values['-Server IP-']),int(values['-Chamber no-']),int(values['-Syringe no-'])]
+            except:
+                sg.popup('Invalid input! Try again')
+                userinput = [[],[],[]]
+                break
     setupwindow.close()
     return userinput
 setup = setupwindow()
+while setup == [[],[],[]]:
+    setup = setupwindow()
+
 log(f'Loaded setup: Server IP is {setup[0]}, number of chambers is {setup[1]}, number of syringes is {setup[2]}')
 
 ########################## Constant values setup ############################
