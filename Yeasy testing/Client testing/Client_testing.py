@@ -400,9 +400,10 @@ layout = [[sg.Column(leftcol,expand_x=True), sg.Column(imgcol, key='-COL1-',expa
 
 # Define the plotting function
 
-def create_plot(plotarguments,plotvalues):
+def create_plot(plotarguments,plotvalues1,plotvalues2):
     plt.figure(figsize=(14,9))
-    plt.plot(plotarguments, plotvalues, color='purple',marker = 'o')
+    plt.plot(plotarguments, plotvalues1, color='green',marker = 'o')
+    plt.plot(plotarguments, plotvalues2, color='orange',marker = 'o')
     plt.title('Number of yeast cells in time',fontsize=20)
     plt.xlabel('Time [min]',fontsize=20)
     plt.ylabel('Number of cells', fontsize=20)
@@ -499,6 +500,8 @@ while True:
         graphing = True
         #read_datafiles()
         green_values,orange_values = getvalues(Values_list,active_chamber)
+        if 'figure_canvas' in globals():
+            clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas)
         window['-COL1-'].update(visible=False)
         window['-COL2-'].update(visible=True)
         window['chamber_info_plt'].update(visible=True)
