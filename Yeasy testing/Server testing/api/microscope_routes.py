@@ -10,6 +10,8 @@ debug = True
 if debug == False:
     from .microscope import Microscope
     microscope = Microscope()
+else:
+    i = 0
 
 microscope_api = Blueprint("backend", __name__)
 
@@ -24,7 +26,9 @@ def get_image():
         # array = np.random.rand(500,30*500)
         # image = (array * 255).astype(np.uint8)
         # image = Image.fromarray(image)
-        image = Image.open(os.path.join(os.path.dirname(__file__), 'cells_RGB.tiff'))
+        global i
+        image = Image.open(os.path.join(os.path.dirname(__file__), f'cells_RGB_{i+1}.tiff'))
+        i = (i + 1) % 3
         # Define the region to crop the image
         width, height = image.size
         left = 2517

@@ -19,13 +19,22 @@ counting_timer = time.time()
 def log(msg):
     print(f'{round(time.time() - start,2)}: {msg}')
 def setupwindow():
-    layout = [
-        [sg.Text(f'Please select the settings for the program')],
-        [[sg.Text('Server IP:')],[sg.Input('127.0.0.1:5000',size=(20, 10),key='-Server IP-')]],
-        [[sg.Text('Number of chambers')],[sg.Input('30',size=(20, 10),key='-Chamber no-')]],
-        [[sg.Text('Number of syringes')],[sg.Input('3',size=(20, 10),key='-Syringe no-')]],
-        [sg.Button('Cancel', size=(10,4)),sg.Button('Confirm',size=(10,4))]
-    ]
+    if Testing:
+        layout = [
+            [sg.Text(f'Please select the settings for the program')],
+            [[sg.Text('Server IP:')],[sg.Input(size=(20, 10),key='-Server IP-')]],
+            [[sg.Text('Number of chambers')],[sg.Input(size=(20, 10),key='-Chamber no-')]],
+            [[sg.Text('Number of syringes')],[sg.Input(size=(20, 10),key='-Syringe no-')]],
+            [sg.Button('Cancel', size=(10,4)),sg.Button('Confirm',size=(10,4))]
+        ]
+    else:
+        layout = [
+            [sg.Text(f'Please select the settings for the program')],
+            [[sg.Text('Server IP:')],[sg.Input('127.0.0.1:5000',size=(20, 10),key='-Server IP-')]],
+            [[sg.Text('Number of chambers')],[sg.Input('30',size=(20, 10),key='-Chamber no-')]],
+            [[sg.Text('Number of syringes')],[sg.Input('3',size=(20, 10),key='-Syringe no-')]],
+            [sg.Button('Cancel', size=(10,4)),sg.Button('Confirm',size=(10,4))]
+        ]
     setupwindow= sg.Window(f'Program setup',layout,size=(400,300))
     while True:
         event, values = setupwindow.read()

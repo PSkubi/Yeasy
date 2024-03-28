@@ -1,3 +1,4 @@
+@echo off
 REM REM Step 1: Create virtual environment
 REM python -m venv venv
 REM echo Step 1 completed
