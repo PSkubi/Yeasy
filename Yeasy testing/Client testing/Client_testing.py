@@ -26,17 +26,17 @@ while True:
             layout = [
                 [sg.Text(f'Please select the settings for the program, and click Confirm')],
                 [[sg.Text('Server IP:')],[sg.Input(size=(20, 10),key='-Server IP-')]],
-                [[sg.Text('Number of chambers')],[sg.Input(size=(20, 10),key='-Chamber no-')]],
-                [[sg.Text('Number of syringes')],[sg.Input(size=(20, 10),key='-Syringe no-')]],
-                [sg.Button('Cancel', size=(10,4)),sg.Button('Confirm',size=(10,4)),sg.Button('Help',size=(10,4))]
+                [[sg.Text('Number of chambers:')],[sg.Input(size=(20, 10),key='-Chamber no-')]],
+                [[sg.Text('Number of syringes:')],[sg.Input(size=(20, 10),key='-Syringe no-')]],
+                [sg.Button('Cancel', size=(8,2)),sg.Button('Confirm',size=(8,2)),sg.Button('Help',size=(8,2))]
             ]
         else:
             layout = [
                 [sg.Text(f'Please select the settings for the program')],
                 [[sg.Text('Server IP:')],[sg.Input('127.0.0.1:5000',size=(20, 10),key='-Server IP-')]],
-                [[sg.Text('Number of chambers')],[sg.Input('30',size=(20, 10),key='-Chamber no-')]],
-                [[sg.Text('Number of syringes')],[sg.Input('3',size=(20, 10),key='-Syringe no-')]],
-                [sg.Button('Cancel', size=(10,4)),sg.Button('Confirm',size=(10,4)),sg.Button('Help',size=(10,4))]
+                [[sg.Text('Number of chambers:')],[sg.Input('30',size=(20, 10),key='-Chamber no-')]],
+                [[sg.Text('Number of syringes:')],[sg.Input('3',size=(20, 10),key='-Syringe no-')]],
+                [sg.Button('Cancel', size=(8,2)),sg.Button('Confirm',size=(8,2)),sg.Button('Help',size=(8,2))]
             ]
         setupwindow= sg.Window(f'Program setup',layout,size=(400,300))
         while True:
