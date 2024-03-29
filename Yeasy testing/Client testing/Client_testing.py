@@ -14,6 +14,8 @@ import threading
 import queue
 Testing = True #sg.popup_yes_no("Do you want to set up Testing mode?",  title="YesNo")
 ImageFile.LOAD_TRUNCATED_IMAGES = True
+BASE_DIR = os.path.dirname(__file__)                      # base directory for relative paths
+sg.set_options(icon=os.path.join(BASE_DIR,'icon.ico'))    # set the icon for the window
 while True:
     start = time.time() 
     counting_timer = time.time()
@@ -22,11 +24,11 @@ while True:
     def setupwindow():
         if Testing:
             layout = [
-                [sg.Text(f'Please select the settings for the program')],
+                [sg.Text(f'Please select the settings for the program, and click Confirm')],
                 [[sg.Text('Server IP:')],[sg.Input(size=(20, 10),key='-Server IP-')]],
                 [[sg.Text('Number of chambers')],[sg.Input(size=(20, 10),key='-Chamber no-')]],
                 [[sg.Text('Number of syringes')],[sg.Input(size=(20, 10),key='-Syringe no-')]],
-                [sg.Button('Cancel', size=(10,4)),sg.Button('Confirm',size=(10,4))]
+                [sg.Button('Cancel', size=(10,4)),sg.Button('Confirm',size=(10,4)),sg.Button('Help',size=(10,4))]
             ]
         else:
             layout = [
@@ -34,7 +36,7 @@ while True:
                 [[sg.Text('Server IP:')],[sg.Input('127.0.0.1:5000',size=(20, 10),key='-Server IP-')]],
                 [[sg.Text('Number of chambers')],[sg.Input('30',size=(20, 10),key='-Chamber no-')]],
                 [[sg.Text('Number of syringes')],[sg.Input('3',size=(20, 10),key='-Syringe no-')]],
-                [sg.Button('Cancel', size=(10,4)),sg.Button('Confirm',size=(10,4))]
+                [sg.Button('Cancel', size=(10,4)),sg.Button('Confirm',size=(10,4)),sg.Button('Help',size=(10,4))]
             ]
         setupwindow= sg.Window(f'Program setup',layout,size=(400,300))
         while True:
@@ -48,6 +50,8 @@ while True:
                     sg.popup('Invalid input! Try again')
                     userinput = [[],[],[]]
                 break
+            elif event == 'Help':
+                sg.popup('Please enter the IP address of the server, the number of chambers and the number of syringes. \n \n The IP address should be similar to this: 127.0.0.1:5000, and is displayed when launching the Server.\n  \n The number of chambers for the dedicated chip is 30, but setting this to 15 will enable the user to view two chambers at once. \n \n Click Confirm after writing these settings to continue.')
         setupwindow.close()
         return userinput
     setup = setupwindow()
@@ -59,7 +63,6 @@ while True:
     ########################## Constant values setup ############################
                                 
     SERVER = f"http://{setup[0]}/api"                         # api base route from server IP address
-    BASE_DIR = os.path.dirname(__file__)                      # base directory for relative paths
     image_files_folder = os.path.join(BASE_DIR,'Image_files') # folder for the image files
     whole_image_tif_path = os.path.join(image_files_folder,'whole_image.tif') # Create a path for the whole image tif file     
     chamber_number = int(setup[1])                          # number of chambers                          
@@ -400,7 +403,7 @@ while True:
 
     leftcol = [
         [sg.Listbox(values=c_list,font=('Calibri', 20), change_submits=True, size=(30, 20), key='listbox',expand_y=True)],
-        [sg.Button('Live view', size=(8, 2)), sg.Button('Graph', size=(8, 2)),sg.Button('Syringe control',size=(8,2)),sg.Button('Restart program',size=(8,2))],
+        [sg.Button('Live view', size=(8, 2)), sg.Button('Graph', size=(8, 2)),sg.Button('Syringe control',size=(8,2)),sg.Button('Restart program',size=(8,2)),sg.Button('Help',size=(8,2))],
     ]
 
     layout = [[sg.Column(leftcol,expand_x=True), sg.Column(imgcol, key='-COL1-',expand_x=True), sg.Column(graphcol, visible=False, key='-COL2-',expand_x=True)]]
@@ -533,6 +536,8 @@ while True:
                 log(f'The user passed syringe control: {syringe_operation(syr_win_2)}')     # log the operation of the syringes
                 if syringe_operation(syr_win_2) != ('None',0,0,0,0,0):                      # if the user actually selected something
                     send_syringe_control(syr_win_2)                        # send the operation to the server
+        elif event == 'Help':                                              # if the user clicks on the help button
+            sg.popup('If you can\'t see the images from the microscope, click Restart Program and make sure that you have provided the correct IP address for the server. \n \n Choose the chamber you wish to see using the list on the left. \n \n If you want to see the graph of the number of cells in a chamber, click on the Graph button. \n \n If you want to control the syringes, click on the Syringe control button. \n \n If you want to change the settings, click on the Restart program button. \n \n If you want to close the program, click on the X in the top right corner of the window.')
         elif event == 'Restart program':                         # if the user clicks on the return to the setup window button
             break
         if not graphing:      
