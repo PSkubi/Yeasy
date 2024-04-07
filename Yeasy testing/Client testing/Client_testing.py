@@ -25,9 +25,9 @@ while True:
         if Testing:
             layout = [
                 [sg.Text(f'Please select the settings for the program, and click Confirm')],
-                [[sg.Text('Server IP:')],[sg.Input(size=(20, 10),key='-Server IP-')]],
-                [[sg.Text('Number of chambers:')],[sg.Input(size=(20, 10),key='-Chamber no-')]],
-                [[sg.Text('Number of syringes:')],[sg.Input(size=(20, 10),key='-Syringe no-')]],
+                [[sg.Text('Server IP:')],[sg.Input('127.0.0.1:5000',size=(20, 10),key='-Server IP-')]],
+                [[sg.Text('Number of chambers:')],[sg.Input('30',size=(20, 10),key='-Chamber no-')]],
+                [[sg.Text('Number of syringes:')],[sg.Input('3',size=(20, 10),key='-Syringe no-')]],
                 [sg.Button('Cancel', size=(8,2)),sg.Button('Confirm',size=(8,2)),sg.Button('Help',size=(8,2))]
             ]
         else:
@@ -68,7 +68,8 @@ while True:
     chamber_number = int(setup[1])                          # number of chambers                          
     syringe_number = int(setup[2])                          # number of syringes
     control_dict={'Volume':0,'Duration':1,'µL':2, 'mL':3, 'L':4,'minutes':5,'hours':6,'µL/min':'UM', 'mL/min':'MM', 'µL/hr':'UH', 'mL/hr':'MH'} # dictionary for the control type encoding
-
+    if not os.path.exists(image_files_folder):
+        os.makedirs(image_files_folder)
     def send_syringe_control(control_list):
         '''Send instructions to a syringe based on the control list'''
         for i in (0,4,5):
@@ -104,9 +105,13 @@ while True:
         return image_bytes
     def count_all_chambers():
         '''Count the cells in all chambers, output a 2D list of cell numbers'''
+        # Save the current image as a tif file.
+        full_image = Image.open(imgask())
+        full_image.save(whole_image_tif_path)
+        sample_read(whole_image_tif_path,chamber_number)
         counting_list = []
         for i in range(chamber_number):
-            cell_numbers,area_list = cell_counting(i+1)
+            cell_numbers = cell_counting(i+1)
             counting_list.append(cell_numbers)
         return counting_list
     def getvalues(value_list,active_chamber):
@@ -246,6 +251,7 @@ while True:
         print(os.path.join(image_files_folder,'whole_image.tif'))
     ########################### Cell counting functions ####################
     def cell_counting(chamber_no):
+        chamber_no = str(chamber_no) # typecast chamber_no to be a str
         #get the chamber_num and get the prepared masks
         chamber = 'chamber' + chamber_no + '.tif'
         chamber_img = cv2.imread(chamber)
@@ -301,31 +307,31 @@ while True:
             print(mask_name[i]+'Cells: {}'.format(cells))
             print(mask_name[i]+'Area: {}'.format(sum_area))
 
-        cv2.imshow('counted_chamber', chamber_img)
+        # cv2.imshow('counted_chamber', chamber_img)
         cv2.imwrite('chamber'+chamber_no+' counted.tif', chamber_img)
 
         cv2.waitKey(0)
-        cv2.destroyAllWindows()
-        return cell_numbers, area_list
+        # cv2.destroyAllWindows()
+        return cell_numbers#, area_list
     def sample_read(sample,chamber_num):
 
         # read and display the image
         image_file = sample
         img=cv2.imread(image_file)
         img_colnum=img.shape[1]
-        print('sample colnum: '+str(img_colnum))
+        log('sample colnum: '+str(img_colnum))
         img_rownum=img.shape[0]
-        print('sample rownum: '+str(img_rownum))
+        log('sample rownum: '+str(img_rownum))
 
         #crop the image and split into multiple chambers
         cropped_img=img[img_rownum//2-400:img_rownum//2+450,img_colnum//2-9300:img_colnum//2+8800]
         cropped_colnum=cropped_img.shape[1]
-        print('cropped sample colnum: '+str(cropped_colnum))
+        log('cropped sample colnum: '+str(cropped_colnum))
         cropped_rownum=cropped_img.shape[0]
-        print('cropped sample rownum: '+str(cropped_rownum))
+        log('cropped sample rownum: '+str(cropped_rownum))
         chamber_col=cropped_colnum//chamber_num
-        print('chamber colnum: '+str(chamber_col))
-        print('chamber rownum: '+str(cropped_rownum))
+        log('chamber colnum: '+str(chamber_col))
+        log('chamber rownum: '+str(cropped_rownum))
         chamber_right_boundary=0
         chamber_index=1
 
@@ -440,8 +446,15 @@ while True:
             time.sleep(0.25)
             # Get image
             user_image_full = Image.open(imgask())
-            # Get the size of the image
             width, height = user_image_full.size
+            log(f'Image data loaded>> {width}x{height}')
+            left = 2517
+            top = 0 + 546
+            right = width - 3039
+            bottom = height - 500                                             
+            user_image_cropped = user_image_full.crop((left, top, right, bottom))         # Crop the image 
+            # Get the size of the image
+            width, height = user_image_cropped.size
             # Define the width of each smaller image
             small_width = width // chamber_number
             # Create a list to store the smaller images
@@ -454,12 +467,22 @@ while True:
                 right = (i + 1) * small_width
                 bottom = height
                 # Crop the current small image and add it to the list
-                small_image = user_image_full.crop((left, top, right, bottom))
+                small_image = user_image_cropped.crop((left, top, right, bottom))
                 small_images.append(small_image)
             small_images_queue.put(small_images)
     split_image_thread = threading.Thread(target=split_image)
     small_images_queue = queue.Queue()
     split_image_thread.start()
+    def counting_cells_loop():
+        while not stop_event.is_set():
+            time.sleep(10)
+            log(f'Trying to count cells in all chambers')   # try to count the cells
+            cell_numbers = count_all_chambers()   # count the cells in all chambers
+            log(f'Counted cells in chambers')
+            Values_list.append(cell_numbers)                # append the cell numbers to the values list
+            Arguments_list.append((time.time() - start)/60) # append the time (in mins) to the arguments list
+    counting_cells_thread = threading.Thread(target=counting_cells_loop)
+    counting_cells_thread.start()
     ################################# The main loop ###################################
     graphing = False
     window = sg.Window('Yeasy', layout, return_keyboard_events=True,size=(1920,1080),location=(0, 0), use_default_focus=True, finalize=True,keep_on_top=False,resizable=True).Finalize()

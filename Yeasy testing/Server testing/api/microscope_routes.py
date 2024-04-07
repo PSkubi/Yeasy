@@ -30,12 +30,12 @@ def get_image():
         image = Image.open(os.path.join(os.path.dirname(__file__), f'cells_RGB_{i+1}.tiff'))
         i = (i + 1) % 3
         # Define the region to crop the image
-        width, height = image.size
-        left = 2517
-        top = 0 + 546
-        right = width-3039
-        bottom = height - 500                                             
-        image = image.crop((left, top, right, bottom))                  # Crop the image 
+        # width, height = image.size
+        # left = 2517
+        # top = 0 + 546
+        # right = width-3039
+        # bottom = height - 500                                             
+        # image = image.crop((left, top, right, bottom))                  # Crop the image 
         byte_arr = io.BytesIO()                                         # Create an empty bytes object                           
         image.save(byte_arr, format='TIFF')                             # Save the image to the bytes object in tiff format
         byte_arr = byte_arr.getvalue()                                  # Get the value of the bytes object
