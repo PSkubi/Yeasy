@@ -12,7 +12,6 @@ import math
 import glob
 import threading
 import queue
-Testing = True #sg.popup_yes_no("Do you want to set up Testing mode?",  title="YesNo")
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 BASE_DIR = os.path.dirname(__file__)                      # base directory for relative paths
 sg.set_options(icon=os.path.join(BASE_DIR,'icon.ico'))    # set the icon for the window
@@ -22,22 +21,13 @@ while True:
     def log(msg):
         print(f'{round(time.time() - start,2)}: {msg}')
     def setupwindow():
-        if Testing:
-            layout = [
-                [sg.Text(f'Please select the settings for the program, and click Confirm')],
-                [[sg.Text('Server IP:')],[sg.Input('127.0.0.1:5000',size=(20, 10),key='-Server IP-')]],
-                [[sg.Text('Number of chambers:')],[sg.Input('30',size=(20, 10),key='-Chamber no-')]],
-                [[sg.Text('Number of syringes:')],[sg.Input('3',size=(20, 10),key='-Syringe no-')]],
-                [sg.Button('Cancel', size=(8,2)),sg.Button('Confirm',size=(8,2)),sg.Button('Help',size=(8,2))]
-            ]
-        else:
-            layout = [
-                [sg.Text(f'Please select the settings for the program')],
-                [[sg.Text('Server IP:')],[sg.Input('127.0.0.1:5000',size=(20, 10),key='-Server IP-')]],
-                [[sg.Text('Number of chambers:')],[sg.Input('30',size=(20, 10),key='-Chamber no-')]],
-                [[sg.Text('Number of syringes:')],[sg.Input('3',size=(20, 10),key='-Syringe no-')]],
-                [sg.Button('Cancel', size=(8,2)),sg.Button('Confirm',size=(8,2)),sg.Button('Help',size=(8,2))]
-            ]
+        layout = [
+            [sg.Text(f'Please select the settings for the program, and click Confirm')],
+            [[sg.Text('Server IP:')],[sg.Input('127.0.0.1:5000',size=(20, 10),key='-Server IP-')]],
+            [[sg.Text('Number of chambers:')],[sg.Input('30',size=(20, 10),key='-Chamber no-')]],
+            [[sg.Text('Number of syringes:')],[sg.Input('3',size=(20, 10),key='-Syringe no-')]],
+            [sg.Button('Cancel', size=(8,2)),sg.Button('Confirm',size=(8,2)),sg.Button('Help',size=(8,2))]
+        ]
         setupwindow= sg.Window(f'Program setup',layout,size=(400,300))
         while True:
             event, values = setupwindow.read()
@@ -473,7 +463,7 @@ while True:
             log(f'Counted cells in chambers.')
             log(f'Cell numbers: {counting_list}')
             #Values_list.append(counting_list)                # append the cell numbers to the values list
-            Arguments_list.append((time.time() - start)/60) # append the time (in mins) to the arguments list
+            Arguments_list.append((round((time.time() - start)/60,2))) # append the time (in mins) to the arguments list
             log(f'Green values list: {Green_values_list}')
             log(f'Green values list size:\n First dimention: {len(Green_values_list)} \n Second dimention: {len(Green_values_list[0])} \n')
             log(f'Orange values list: {Orange_values_list} ')
@@ -504,33 +494,8 @@ while True:
             window.Maximize()                                       # maximise the window
             window['-COL1-'].expand(expand_x=True, expand_y=True, expand_row=False) # expand the image column
         elif event in (sg.TIMEOUT_EVENT) and not graphing:          # if user doesn't do anything, update the image
-            if Testing:
-                small_images = small_images_queue.get()
-                user_image = small_images[active_chamber]
-            else:
-                image = Image.open(imgask())                  # load the image from the array
-                image_tiff = io.BytesIO()                           # create a bytes IO object for storing tiff data
-                image.save(image_tiff, format='TIFF')               # save the image to the bytes IO object
-                log(f'Image data loaded>>')                         
-                image_files = glob.glob(image_files_folder+'\\*.tif') # get the list of tif files in the image_files folder
-                for file in image_files:
-                    os.remove(file)                                 # Clean the Image_files folder before saving new files
-                log(f'Cleaned the Image_files folder')
-                # save the image as a tif file
-                image_tiff.save(whole_image_tif_path)               # Save the whole image as a tif file
-                log(f'Saved the whole image as a tif file')
-                sample_read(whole_image_tif_path,chamber_number)    # split the whole image into chambers
-                user_image = Image.open(f'Image_files\\chamber{active_chamber}.tif') # Open the image of the active chamber
-                if time.time() - counting_timer > 60:               # If more than 60 seconds passed from last counting
-                    log(f'Trying to count cells in all chambers')   # try to count the cells
-                    counting_timer = time.time()                    # reset the timer
-                    cell_numbers,area_list = count_all_chambers()   # count the cells in all chambers
-                    log(f'Counted cells in chambers')
-                    Values_list.append(cell_numbers)                # append the cell numbers to the values list
-                    Arguments_list.append((time.time() - start)/60) # append the time (in mins) to the arguments list
-            # except:
-            #     sg.popup('Connection error')                # throw a popup if that fails
-                break
+            small_images = small_images_queue.get()
+            user_image = small_images[active_chamber]
         elif event == 'Graph':                                              # the graph button opens the graph    
             graphing = True
             #read_datafiles()
@@ -547,16 +512,9 @@ while True:
             active_chamber = c_list.index(values["listbox"][0])             # change the active chamber
             log(f'Changed active chamber to {active_chamber+1}')            # log the change
             if graphing:
-                if Testing:
-                    clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas)
-                    figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(Arguments_list,Green_values_list[active_chamber],Orange_values_list[active_chamber]))
-                    window.maximize()
-                else:
-                    #read_datafiles()
-                    green_values,orange_values = getvalues(Arguments_list,active_chamber)
-                    clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas)
-                    figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(Arguments_list,green_values,orange_values))
-                    window['-CANVAS-'].expand(expand_x=True, expand_y=True, expand_row=False)
+                clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas)
+                figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(Arguments_list,Green_values_list[active_chamber],Orange_values_list[active_chamber]))
+                window.maximize()
         elif event =='Syringe control':                                     # if the user clicks on the syringe control button
             syr_win_1 = syringewindow1()                                    # open the first syringe control window
             if syr_win_1 != []:
