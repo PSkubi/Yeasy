@@ -234,14 +234,6 @@ while True:
             del img
             return bio.getvalue()
         return ImageTk.PhotoImage(img)
-
-    def image_to_bytes(image_path):
-        with Image.open(image_path) as image_file:
-            #image_file = image_file.resize((500,500))
-            image_bytes = io.BytesIO()
-            image_file.save(image_bytes, format='PNG')
-            image_bytes = image_bytes.getvalue()
-        return image_bytes
     if __name__ == '__main__':
         BASE_DIR = os.path.dirname(__file__)                      # base directory for relative paths
         image_files_folder = os.path.join(BASE_DIR,'Image_files') # folder for the image files
