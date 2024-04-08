@@ -103,17 +103,6 @@ while True:
         response = req.get(endpoint)
         image_bytes = io.BytesIO(response.content)
         return image_bytes
-    def count_all_chambers():
-        '''Count the cells in all chambers, output a 2D list of cell numbers'''
-        # Save the current image as a tif file.
-        full_image = Image.open(imgask())
-        full_image.save(whole_image_tif_path)
-        [splitted_chamber,mask]=sample_read(whole_image_tif_path,chamber_number)
-        counting_list = []
-        for i in range(chamber_number):
-            [cell_numbers,area_list,chamber_img] = cell_counting(i+1,mask,splitted_chamber)
-            counting_list.append(cell_numbers)
-        return counting_list
     def getvalues(value_list,active_chamber):
         '''Get value lists for a given chamber from a list of values lists'''
         value_time_list_1 = []
@@ -234,13 +223,6 @@ while True:
             del img
             return bio.getvalue()
         return ImageTk.PhotoImage(img)
-    if __name__ == '__main__':
-        BASE_DIR = os.path.dirname(__file__)                      # base directory for relative paths
-        image_files_folder = os.path.join(BASE_DIR,'Image_files') # folder for the image files
-        print('')
-        print(image_files_folder) # folder for the image files)
-        print('')
-        print(os.path.join(image_files_folder,'whole_image.tif'))
     ########################### Cell counting functions ####################
     def cell_counting(chamber_no, mask, splitted_chamber):
 
@@ -295,12 +277,10 @@ while True:
             cell_numbers.append(cells)
             area_list.append(sum_area)
 
-            print(mask_name[i] + 'Cells: {}'.format(cells))
-            print(mask_name[i] + 'Area: {}'.format(sum_area))
+            # print(mask_name[i] + 'Cells: {}'.format(cells))
+            # print(mask_name[i] + 'Area: {}'.format(sum_area))
 
         return cell_numbers, area_list, chamber_img
-
-
     def sample_read(sample, chamber_num):
 
         # read and display the image
@@ -380,13 +360,16 @@ while True:
         return splitted_chamber, mask
     ########################### File Management ############################
     active_chamber = 0
+    # Prepare the lists for data storage
+    Arguments_list = []
+    Green_values_list = []
+    Orange_values_list = []
     # create a list of chamber names 
     c_list = []
     for i in range(chamber_number):
         c_list.append('Chamber '+str(i+1))
-    # Prepare the lists for data
-    Arguments_list = []
-    Values_list = []
+        Green_values_list.append([])
+        Orange_values_list.append([])
     ################################# The layout ##################################
     waiting_image = os.path.join(BASE_DIR, 'waiting.jpg')    # Load the waiting image
     user_image = Image.open(waiting_image)                    # Load the waiting image
@@ -468,14 +451,36 @@ while True:
     split_image_thread = threading.Thread(target=split_image)
     small_images_queue = queue.Queue()
     split_image_thread.start()
+    ###################### Counting cells thread ################################
+    counting_index = 0 
     def counting_cells_loop():
         while not stop_event.is_set():
             time.sleep(10)
             log(f'Trying to count cells in all chambers')   # try to count the cells
-            cell_numbers = count_all_chambers()   # count the cells in all chambers
-            log(f'Counted cells in chambers')
-            Values_list.append(cell_numbers)                # append the cell numbers to the values list
+            # Save the current image as a tif file.
+            global counting_index
+            full_image = Image.open(imgask())
+            whole_image_tif_path = os.path.join(image_files_folder,f'whole_image{counting_index}.tif') # Create a path for the whole image tif file
+            full_image.save(whole_image_tif_path)
+            [splitted_chamber,mask]=sample_read(whole_image_tif_path,chamber_number)
+            counting_list = []
+            for i in range(chamber_number):
+                [cell_numbers,area_list,chamber_img] = cell_counting(i+1,mask,splitted_chamber)
+                log(f'Counted cells in chamber {i+1}, green: {cell_numbers[0]}, orange: {cell_numbers[1]}')
+                Green_values_list[i].append(cell_numbers[0])
+                Orange_values_list[i].append(cell_numbers[1])
+                #counting_list.append(cell_numbers)
+            log(f'Counted cells in chambers.')
+            log(f'Cell numbers: {counting_list}')
+            #Values_list.append(counting_list)                # append the cell numbers to the values list
             Arguments_list.append((time.time() - start)/60) # append the time (in mins) to the arguments list
+            log(f'Green values list: {Green_values_list}')
+            log(f'Green values list size:\n First dimention: {len(Green_values_list)} \n Second dimention: {len(Green_values_list[0])} \n')
+            log(f'Orange values list: {Orange_values_list} ')
+            log(f'Orange values list size: \n First dimention: {len(Orange_values_list)} \n Second dimention: {len(Orange_values_list[0])} \n')
+            log(f'Arguments list: {Arguments_list}')
+            log(f'Arguments list size: {len(Arguments_list)}')
+            counting_index += 1
     counting_cells_thread = threading.Thread(target=counting_cells_loop)
     counting_cells_thread.start()
     ################################# The main loop ###################################
@@ -529,24 +534,29 @@ while True:
         elif event == 'Graph':                                              # the graph button opens the graph    
             graphing = True
             #read_datafiles()
-            green_values,orange_values = getvalues(Values_list,active_chamber)
+            #green_values,orange_values = getvalues(Values_list,active_chamber)
             if 'figure_canvas' in globals():
                 clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas)
             window['-COL1-'].update(visible=False)
             window['-COL2-'].update(visible=True)
             window['chamber_info_plt'].update(visible=True)
-            figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(Arguments_list,green_values,orange_values))
+            figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(Arguments_list,Green_values_list[active_chamber],Orange_values_list[active_chamber]))
             window.maximize()
             window['-COL2-'].expand(expand_x=True, expand_y=True, expand_row=False)
         elif event == 'listbox':                                            # something from the list of chambers
             active_chamber = c_list.index(values["listbox"][0])             # change the active chamber
             log(f'Changed active chamber to {active_chamber+1}')            # log the change
             if graphing:
-                #read_datafiles()
-                green_values,orange_values = getvalues(Arguments_list,active_chamber)
-                clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas)
-                figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(Arguments_list,green_values,orange_values))
-                window['-CANVAS-'].expand(expand_x=True, expand_y=True, expand_row=False)
+                if Testing:
+                    clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas)
+                    figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(Arguments_list,Green_values_list[active_chamber],Orange_values_list[active_chamber]))
+                    window.maximize()
+                else:
+                    #read_datafiles()
+                    green_values,orange_values = getvalues(Arguments_list,active_chamber)
+                    clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas)
+                    figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(Arguments_list,green_values,orange_values))
+                    window['-CANVAS-'].expand(expand_x=True, expand_y=True, expand_row=False)
         elif event =='Syringe control':                                     # if the user clicks on the syringe control button
             syr_win_1 = syringewindow1()                                    # open the first syringe control window
             if syr_win_1 != []:
