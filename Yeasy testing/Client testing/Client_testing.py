@@ -108,10 +108,10 @@ while True:
         # Save the current image as a tif file.
         full_image = Image.open(imgask())
         full_image.save(whole_image_tif_path)
-        sample_read(whole_image_tif_path,chamber_number)
+        [splitted_chamber,mask]=sample_read(whole_image_tif_path,chamber_number)
         counting_list = []
         for i in range(chamber_number):
-            cell_numbers = cell_counting(i+1)
+            [cell_numbers,area_list,chamber_img] = cell_counting(i+1,mask,splitted_chamber)
             counting_list.append(cell_numbers)
         return counting_list
     def getvalues(value_list,active_chamber):
@@ -250,17 +250,15 @@ while True:
         print('')
         print(os.path.join(image_files_folder,'whole_image.tif'))
     ########################### Cell counting functions ####################
-    def cell_counting(chamber_no):
-        chamber_no = str(chamber_no) # typecast chamber_no to be a str
-        #get the chamber_num and get the prepared masks
-        chamber = 'chamber' + chamber_no + '.tif'
-        chamber_img = cv2.imread(chamber)
-        green_mask = 'chamber' + chamber_no + ' dil_green.tif'
-        green_mask_img = cv2.imread(green_mask, cv2.IMREAD_GRAYSCALE)
-        orange_mask = 'chamber' + chamber_no + ' dil_orange.tif'
-        orange_mask_img = cv2.imread(orange_mask, cv2.IMREAD_GRAYSCALE)
+    def cell_counting(chamber_no, mask, splitted_chamber):
 
-        #delete the mask out of the chamber
+        # get the chamber_num and get the prepared masks
+        chamber_img = splitted_chamber[chamber_no - 1]
+        chamber_mask = mask[chamber_no - 1]
+        green_mask_img = chamber_mask[1]
+        orange_mask_img = chamber_mask[0]
+
+        # delete the mask out of the chamber
         green_mask_img[:, 0:50] = 0
         green_mask_img[:, 550::] = 0
         green_mask_img[0:190, :] = 0
@@ -269,96 +267,96 @@ while True:
         orange_mask_img[:, 550::] = 0
         orange_mask_img[0:200, :] = 0
         orange_mask_img[660::, :] = 0
-        mask = [green_mask_img, orange_mask_img]
+        cropped_mask = [green_mask_img, orange_mask_img]
 
-        #find the contour
-        green_mask=mask[0]
-        orange_mask=mask[1]
+        # find the contour
+        green_mask = cropped_mask[0]
+        orange_mask = cropped_mask[1]
         contours_green, hierarchy = cv2.findContours(green_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         contours_orange, hierarchy = cv2.findContours(orange_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        contours=[contours_green,contours_orange]
-        mask_name=['green','orange']
+        contours = [contours_green, contours_orange]
+        mask_name = ['green', 'orange']
 
-        #define the area of cell
+        # define the area of cell
         average_cell_area = 290
         connected_cell_area = 600
         minimum_cell_area = 30
 
-        #counting the cell and draw the detected contour
+        # counting the cell and draw the detected contour
         cell_numbers = []
         area_list = []
-        for i in range(0,len(mask)):
+        for i in range(0, len(mask_name)):
             cells = 0
-            contour_color=[(0,128,0),(0,128,255)]
-            sum_area=0
+            contour_color = [(0, 128, 0), (0, 128, 255)]
+            sum_area = 0
 
             for c in contours[i]:
                 area = cv2.contourArea(c)
-                if area>minimum_cell_area:
+                if area > minimum_cell_area:
                     sum_area = sum_area + area
                     cv2.drawContours(chamber_img, [c], -1, contour_color[i], 2)
                     if area > connected_cell_area:
                         cells += math.floor(area / average_cell_area)
                     else:
                         cells += 1
-                cell_numbers.append(cells)
-                area_list.append(sum_area)
 
-            print(mask_name[i]+'Cells: {}'.format(cells))
-            print(mask_name[i]+'Area: {}'.format(sum_area))
+            cell_numbers.append(cells)
+            area_list.append(sum_area)
 
-        # cv2.imshow('counted_chamber', chamber_img)
-        cv2.imwrite('chamber'+chamber_no+' counted.tif', chamber_img)
+            print(mask_name[i] + 'Cells: {}'.format(cells))
+            print(mask_name[i] + 'Area: {}'.format(sum_area))
 
-        cv2.waitKey(0)
-        # cv2.destroyAllWindows()
-        return cell_numbers#, area_list
-    def sample_read(sample,chamber_num):
+        return cell_numbers, area_list, chamber_img
+
+
+    def sample_read(sample, chamber_num):
 
         # read and display the image
         image_file = sample
-        img=cv2.imread(image_file)
-        img_colnum=img.shape[1]
-        log('sample colnum: '+str(img_colnum))
-        img_rownum=img.shape[0]
-        log('sample rownum: '+str(img_rownum))
+        img = cv2.imread(image_file)
+        img_colnum = img.shape[1]
+        print('sample colnum: ' + str(img_colnum))
+        img_rownum = img.shape[0]
+        print('sample rownum: ' + str(img_rownum))
 
-        #crop the image and split into multiple chambers
-        cropped_img=img[img_rownum//2-400:img_rownum//2+450,img_colnum//2-9300:img_colnum//2+8800]
-        cropped_colnum=cropped_img.shape[1]
-        log('cropped sample colnum: '+str(cropped_colnum))
-        cropped_rownum=cropped_img.shape[0]
-        log('cropped sample rownum: '+str(cropped_rownum))
-        chamber_col=cropped_colnum//chamber_num
-        log('chamber colnum: '+str(chamber_col))
-        log('chamber rownum: '+str(cropped_rownum))
-        chamber_right_boundary=0
-        chamber_index=1
+        # crop the image and split into multiple chambers
+        cropped_img = img[img_rownum // 2 - 400:img_rownum // 2 + 450, img_colnum // 2 - 9300:img_colnum // 2 + 8800]
+        cropped_colnum = cropped_img.shape[1]
+        print('cropped sample colnum: ' + str(cropped_colnum))
+        cropped_rownum = cropped_img.shape[0]
+        print('cropped sample rownum: ' + str(cropped_rownum))
+        chamber_col = cropped_colnum // chamber_num
+        print('chamber colnum: ' + str(chamber_col))
+        print('chamber rownum: ' + str(cropped_rownum))
+        chamber_right_boundary = 0
+        chamber_index = 0
 
-        for chamber_left_boundary in range(0,cropped_colnum,chamber_col):
-            if (cropped_colnum-chamber_left_boundary)<chamber_col:
+        splitted_chamber = [0] * chamber_num
+        for chamber_left_boundary in range(0, cropped_colnum, chamber_col):
+            if (cropped_colnum - chamber_left_boundary) < chamber_col:
                 break
 
-            chamber_right_boundary=chamber_left_boundary+chamber_col-1
-            chamber=cropped_img[:,chamber_left_boundary:chamber_right_boundary]
-            cv2.imwrite('chamber' + str(chamber_index) +'.tif', chamber)
-            chamber_index = chamber_index + 1
+            chamber_right_boundary = chamber_left_boundary + chamber_col - 1
+            chamber = cropped_img[:, chamber_left_boundary:chamber_right_boundary]
+            splitted_chamber[chamber_index] = chamber
+            chamber_index += 1
 
-        #separate two different fluorescence
-        for i in range(1,chamber_num+1):
-            chamber_name='chamber'+str(i)+'.tif'
-            chamber_img=cv2.imread(chamber_name)
-            chamber_hsv=cv2.cvtColor(chamber_img,cv2.COLOR_BGR2HSV)
+        # separate two different fluorescence
+        mask = []
+        for i in range(1, chamber_num + 1):
+            chamber_mask = [0] * 2
+            chamber_img = splitted_chamber[i - 1]
+            chamber_hsv = cv2.cvtColor(chamber_img, cv2.COLOR_BGR2HSV)
 
-            #get the orange one
-            hsv_orange_lower=np.array([10, 40, 40])
-            if i==24:
+            # get the orange one
+            hsv_orange_lower = np.array([10, 40, 40])
+            if i == 24:
                 hsv_orange_upper = np.array([12, 255, 255])
             else:
-                hsv_orange_upper=np.array([18, 255, 255])
+                hsv_orange_upper = np.array([18, 255, 255])
 
-            orange_mask=cv2.inRange(chamber_hsv, hsv_orange_lower, hsv_orange_upper)
-            cv2.imwrite('chamber'+str(i)+' orange'+'.tif',orange_mask)
+            orange_mask = cv2.inRange(chamber_hsv, hsv_orange_lower, hsv_orange_upper)
+            # cv2.imwrite('chamber'+str(i)+' orange'+'.tif',orange_mask)
 
             # get the green one
             if i == 30:
@@ -367,22 +365,27 @@ while True:
                 hsv_green_lower = np.array([36, 40, 35])
             hsv_green_upper = np.array([70, 255, 255])
             green_mask = cv2.inRange(chamber_hsv, hsv_green_lower, hsv_green_upper)
-            cv2.imwrite('chamber' + str(i) + ' green' + '.tif', green_mask)
+            # cv2.imwrite('chamber' + str(i) + ' green' + '.tif', green_mask)
 
-            #process the orange and green mask
-            kernel=np.ones((2,2),np.uint8)
+            # process the orange and green mask
+            kernel = np.ones((2, 2), np.uint8)
 
-            #denoise
-            orange_open=cv2.morphologyEx(orange_mask,cv2.MORPH_OPEN,kernel, iterations = 1)
-            green_open=cv2.morphologyEx(green_mask,cv2.MORPH_OPEN,kernel, iterations =1)
-            cv2.imwrite('chamber' + str(i) + ' open_orange' + '.tif', orange_open)
-            cv2.imwrite('chamber' + str(i) + ' open_green' + '.tif', green_open)
+            # denoise
+            orange_open = cv2.morphologyEx(orange_mask, cv2.MORPH_OPEN, kernel, iterations=1)
+            green_open = cv2.morphologyEx(green_mask, cv2.MORPH_OPEN, kernel, iterations=1)
+            # cv2.imwrite('chamber' + str(i) + ' open_orange' + '.tif', orange_open)
+            # cv2.imwrite('chamber' + str(i) + ' open_green' + '.tif', green_open)
 
-            #find the background
-            orange_dilation=cv2.dilate(orange_open,kernel,iterations=2)
+            # find the background
+            orange_dilation = cv2.dilate(orange_open, kernel, iterations=2)
             green_dilation = cv2.dilate(green_open, kernel, iterations=2)
-            cv2.imwrite('chamber'+str(i)+' dil_orange'+'.tif',orange_dilation)
-            cv2.imwrite('chamber' + str(i) + ' dil_green' + '.tif', green_dilation)
+
+            chamber_mask[0] = orange_dilation
+            chamber_mask[1] = green_dilation
+
+            mask.append(chamber_mask)
+
+        return splitted_chamber, mask
     ########################### File Management ############################
     active_chamber = 0
     # create a list of chamber names 
