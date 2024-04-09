@@ -414,34 +414,26 @@ while True:
     new_image = False
     def split_image(stop_event):
         while not stop_event.is_set():
-            log('[Splitting thread] is trying to read the image')
+            log('[Splitting thread] starts reading the image')
             try:
                 user_image_full = Image.open(imgask())
                 width, height = user_image_full.size
-                log(f'[Splitting thread]: Image data loaded>> {width}x{height}')
-                left = 2517
-                top = 0 + 546
-                right = width - 3039
-                bottom = height - 500                                             
-                user_image_cropped = user_image_full.crop((left, top, right, bottom))   # Crop the image 
+                log(f'[Splitting thread]: Image data loaded>> {width}x{height}')                                   
+                user_image_cropped = user_image_full.crop((2517, 546, width - 3039, height - 500))   # Crop the image in order: left, top, right, bottom   
                 width, height = user_image_cropped.size                                 # Get the size of the image
                 small_width = width // chamber_number                                   # Define the width of each smaller image
                 small_images = []
                 for i in range(chamber_number):         # Loop over the width of the image in increments of small_width
-                    left = i * small_width              # Define the coordinates for the current small image
-                    top = 0
-                    right = (i + 1) * small_width
-                    bottom = height
-                    small_image = user_image_cropped.crop((left, top, right, bottom))   # Crop the current small image 
+                    small_image = user_image_cropped.crop((i*small_width, 0, (i + 1) * small_width, height))   # Crop the current small image 
                     small_images.append(small_image)                                    # Append the small image to the list of small images
                 small_images_queue.put(small_images)                                    # Put the list of small images in the queue
                 global new_image 
                 new_image = True
                 log('[Splitting thread] sent the image to the queue')
-            except:
+            except Exception as e:
                 global error
                 error = True
-                log('[Splitting thread] failed to load the image')
+                log(f'[Splitting thread] failed to load the image: {e}')
                 stop_event.set()
                 break
     split_image_thread = threading.Thread(target=split_image,args=(stop_event,))
