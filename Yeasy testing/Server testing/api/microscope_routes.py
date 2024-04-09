@@ -26,13 +26,12 @@ def get_image():
     if debug:
         print(f'The server was asked for an image. The time is {datetime.now().time()}')
         global i
-        image = Image.open(os.path.join(os.path.dirname(__file__), f'cells_RGB_{i+1}.tiff')) # Open the image file
-        i = (i + 1) % 3                                                 # Cycle through the 3 images
-        byte_arr = io.BytesIO()                                         # Create an empty bytes object                           
-        image.save(byte_arr, format='TIFF')                             # Save the image to the bytes object in tiff format
-        byte_arr = byte_arr.getvalue()                                  # Get the value of the bytes object
+        i = (i + 1) % 3
+        image_path = os.path.join(os.path.dirname(__file__), f'cells_RGB_{i+1}.tiff')
+        with open(image_path, 'rb') as f:
+            image_bytes= f.read()
         print(f'The server sent the image. The time is {datetime.now().time()}')
-        return send_file(io.BytesIO(byte_arr), mimetype='image/tiff')   # Send the bytes object as a file
+        return send_file(io.BytesIO(image_bytes), mimetype='image/tiff')
     else:
         image = microscope.get_image()
         return image
