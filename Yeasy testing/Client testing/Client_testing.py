@@ -26,6 +26,7 @@ while True:
             [[sg.Text('Server IP:')],[sg.Input('127.0.0.1:5000',size=(20, 10),key='-Server IP-')]],
             [[sg.Text('Number of chambers:')],[sg.Input('30',size=(20, 10),key='-Chamber no-')]],
             [[sg.Text('Number of syringes:')],[sg.Input('3',size=(20, 10),key='-Syringe no-')]],
+            [[sg.Text('Cell counting interval [s]:')],[sg.Input('10',size=(20, 10),key='-Counting int-')]],
             [sg.Button('Cancel', size=(8,2)),sg.Button('Confirm',size=(8,2)),sg.Button('Help',size=(8,2))]
         ]
         setupwindow= sg.Window(f'Program setup',layout,size=(400,300))
@@ -35,20 +36,20 @@ while True:
                 exit() 
             elif event =='Confirm':
                 try:
-                    userinput = [str(values['-Server IP-']),int(values['-Chamber no-']),int(values['-Syringe no-'])]
+                    userinput = [str(values['-Server IP-']),int(values['-Chamber no-']),int(values['-Syringe no-']),int(values['-Counting int-'])]
                 except:
                     sg.popup('Invalid input! Try again')
-                    userinput = [[],[],[]]
+                    userinput = [[],[],[],[]]
                 break
             elif event == 'Help':
                 sg.popup('Please enter the IP address of the server, the number of chambers and the number of syringes. \n \n The IP address should be similar to this: 127.0.0.1:5000, and is displayed when launching the Server.\n  \n The number of chambers for the dedicated chip is 30, but setting this to 15 will enable the user to view two chambers at once. \n \n Click Confirm after writing these settings to continue.')
         setupwindow.close()
         return userinput
     setup = setupwindow()
-    while setup == [[],[],[]]:
+    while setup == [[],[],[],[]]:
         setup = setupwindow()
 
-    log(f'Loaded setup: Server IP is {setup[0]}, number of chambers is {setup[1]}, number of syringes is {setup[2]}')
+    log(f'Loaded setup: Server IP is {setup[0]}, number of chambers is {setup[1]}, number of syringes is {setup[2]}, counting interval is {setup[3]}s')
 
     ########################## Constant values setup ############################
                                 
@@ -57,6 +58,7 @@ while True:
     whole_image_tif_path = os.path.join(image_files_folder,'whole_image.tif') # Create a path for the whole image tif file     
     chamber_number = int(setup[1])                          # number of chambers                          
     syringe_number = int(setup[2])                          # number of syringes
+    counting_interval = int(setup[3])                       # time in seconds between counting
     control_dict={'Volume':0,'Duration':1,'µL':2, 'mL':3, 'L':4,'minutes':5,'hours':6,'µL/min':'UM', 'mL/min':'MM', 'µL/hr':'UH', 'mL/hr':'MH'} # dictionary for the control type encoding
     if not os.path.exists(image_files_folder):
         os.makedirs(image_files_folder)
@@ -348,7 +350,7 @@ while True:
             mask.append(chamber_mask)
 
         return splitted_chamber, mask
-    ########################### File Management ############################
+    ########################### Graph data Management ############################
     active_chamber = 0
     # Prepare the lists for data storage
     Arguments_list = []
@@ -409,83 +411,104 @@ while True:
         plt.close('all')
     ###################### Splitting image thread ################################
     stop_event = threading.Event()
-    def split_image():
+    error = False
+    def split_image(stop_event):
         while not stop_event.is_set():
-            time.sleep(0.25)
+            #time.sleep(0.2)
+            log('[Splitting thread] is trying to read the image')
             # Get image
-            user_image_full = Image.open(imgask())
-            width, height = user_image_full.size
-            log(f'Image data loaded>> {width}x{height}')
-            left = 2517
-            top = 0 + 546
-            right = width - 3039
-            bottom = height - 500                                             
-            user_image_cropped = user_image_full.crop((left, top, right, bottom))         # Crop the image 
-            # Get the size of the image
-            width, height = user_image_cropped.size
-            # Define the width of each smaller image
-            small_width = width // chamber_number
-            # Create a list to store the smaller images
-            small_images = []
-            # Loop over the width of the image in increments of small_width
-            for i in range(30):
-                # Define the coordinates for the current small image
-                left = i * small_width
-                top = 0
-                right = (i + 1) * small_width
-                bottom = height
-                # Crop the current small image and add it to the list
-                small_image = user_image_cropped.crop((left, top, right, bottom))
-                small_images.append(small_image)
-            small_images_queue.put(small_images)
-    split_image_thread = threading.Thread(target=split_image)
+            try:
+                user_image_full = Image.open(imgask())
+                width, height = user_image_full.size
+                log(f'[Splitting thread]: Image data loaded>> {width}x{height}')
+                left = 2517
+                top = 0 + 546
+                right = width - 3039
+                bottom = height - 500                                             
+                user_image_cropped = user_image_full.crop((left, top, right, bottom))         # Crop the image 
+                # Get the size of the image
+                width, height = user_image_cropped.size
+                # Define the width of each smaller image
+                small_width = width // chamber_number
+                # Create a list to store the smaller images
+                small_images = []
+                # Loop over the width of the image in increments of small_width
+                for i in range(30):
+                    # Define the coordinates for the current small image
+                    left = i * small_width
+                    top = 0
+                    right = (i + 1) * small_width
+                    bottom = height
+                    # Crop the current small image and add it to the list
+                    small_image = user_image_cropped.crop((left, top, right, bottom))
+                    small_images.append(small_image)
+                small_images_queue.put(small_images)
+                log('[Splitting thread] sent the image to the queue')
+            except:
+                global error
+                error = True
+                log('[Splitting thread] failed to load the image')
+                stop_event.set()
+                #sg.popup('Failed to receive the image from the server. Please restart the program.')
+                break
+    split_image_thread = threading.Thread(target=split_image,args=(stop_event,))
     small_images_queue = queue.Queue()
     split_image_thread.start()
     ###################### Counting cells thread ################################
     counting_index = 0 
-    def counting_cells_loop():
+    def counting_cells_loop(stop_event):
         while not stop_event.is_set():
-            time.sleep(10)
+            time.sleep(counting_interval)
             log(f'Trying to count cells in all chambers')   # try to count the cells
             # Save the current image as a tif file.
             global counting_index
-            full_image = Image.open(imgask())
-            whole_image_tif_path = os.path.join(image_files_folder,f'whole_image{counting_index}.tif') # Create a path for the whole image tif file
-            full_image.save(whole_image_tif_path)
-            [splitted_chamber,mask]=sample_read(whole_image_tif_path,chamber_number)
-            counting_list = []
-            for i in range(chamber_number):
-                [cell_numbers,area_list,chamber_img] = cell_counting(i+1,mask,splitted_chamber)
-                log(f'Counted cells in chamber {i+1}, green: {cell_numbers[0]}, orange: {cell_numbers[1]}')
-                Green_values_list[i].append(cell_numbers[0])
-                Orange_values_list[i].append(cell_numbers[1])
-                #counting_list.append(cell_numbers)
-            log(f'Counted cells in chambers.')
-            log(f'Cell numbers: {counting_list}')
-            #Values_list.append(counting_list)                # append the cell numbers to the values list
-            Arguments_list.append((round((time.time() - start)/60,2))) # append the time (in mins) to the arguments list
-            log(f'Green values list: {Green_values_list}')
-            log(f'Green values list size:\n First dimention: {len(Green_values_list)} \n Second dimention: {len(Green_values_list[0])} \n')
-            log(f'Orange values list: {Orange_values_list} ')
-            log(f'Orange values list size: \n First dimention: {len(Orange_values_list)} \n Second dimention: {len(Orange_values_list[0])} \n')
-            log(f'Arguments list: {Arguments_list}')
-            log(f'Arguments list size: {len(Arguments_list)}')
-            counting_index += 1
-    counting_cells_thread = threading.Thread(target=counting_cells_loop)
+            try: 
+                full_image = Image.open(imgask())
+                whole_image_tif_path = os.path.join(image_files_folder,f'whole_image{counting_index}.tif') # Create a path for the whole image tif file
+                full_image.save(whole_image_tif_path)
+                [splitted_chamber,mask]=sample_read(whole_image_tif_path,chamber_number)
+                counting_list = []
+                for i in range(chamber_number):
+                    [cell_numbers,area_list,chamber_img] = cell_counting(i+1,mask,splitted_chamber)
+                    log(f'Counted cells in chamber {i+1}, green: {cell_numbers[0]}, orange: {cell_numbers[1]}')
+                    Green_values_list[i].append(cell_numbers[0])
+                    Orange_values_list[i].append(cell_numbers[1])
+                    #counting_list.append(cell_numbers)
+                log(f'Counted cells in chambers.')
+                log(f'Cell numbers: {counting_list}')
+                #Values_list.append(counting_list)                # append the cell numbers to the values list
+                Arguments_list.append((round((time.time() - start)/60,2))) # append the time (in mins) to the arguments list
+                log(f'Green values list: {Green_values_list}')
+                log(f'Green values list size:\n First dimention: {len(Green_values_list)} \n Second dimention: {len(Green_values_list[0])} \n')
+                log(f'Orange values list: {Orange_values_list} ')
+                log(f'Orange values list size: \n First dimention: {len(Orange_values_list)} \n Second dimention: {len(Orange_values_list[0])} \n')
+                log(f'Arguments list: {Arguments_list}')
+                log(f'Arguments list size: {len(Arguments_list)}')
+                counting_index += 1
+            except:
+                global error
+                error = True
+                log('Counting thread failed to load the image')
+                #sg.popup('Failed to receive the image from the server. Please restart the program.')
+                stop_event.set()
+                break
+    counting_cells_thread = threading.Thread(target=counting_cells_loop,args=(stop_event,))
     counting_cells_thread.start()
     ################################# The main loop ###################################
     graphing = False
+    bio = io.BytesIO()
     window = sg.Window('Yeasy', layout, return_keyboard_events=True,size=(1920,1080),location=(0, 0), use_default_focus=True, finalize=True,keep_on_top=False,resizable=True).Finalize()
-    #read_datafiles()
     window['-COL2-'].expand(expand_x=True, expand_y=True, expand_row=False)
     window['chamber_info_plt'].update(visible=False)
     window.Maximize()
 
     while True:
         event, values = window.read(timeout=500)                    # read the form, set the timeout in miliseconds
-        if event == sg.WIN_CLOSED:                                  # if the window closes - break the loop
-            break
-        elif event in ('Live view') and graphing:                   # the live view button returns to the live view if graphing                                        
+        if event == sg.TIMEOUT_EVENT and not graphing:          # if user doesn't do anything, update the image
+            if not small_images_queue.empty():
+                small_images = small_images_queue.get()
+                user_image = small_images[active_chamber]
+        elif event == 'Live view' and graphing:                   # the live view button returns to the live view if graphing                                        
             graphing = False
             clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas) # clear the canvas
             window['-COL2-'].update(visible=False)                  # make the canvas column invisible
@@ -493,20 +516,17 @@ while True:
             window['chamber_info_plt'].update(visible=False)        # make the graph info invisible
             window.Maximize()                                       # maximise the window
             window['-COL1-'].expand(expand_x=True, expand_y=True, expand_row=False) # expand the image column
-        elif event in (sg.TIMEOUT_EVENT) and not graphing:          # if user doesn't do anything, update the image
-            small_images = small_images_queue.get()
-            user_image = small_images[active_chamber]
+        elif event == sg.WIN_CLOSED:          # if the window closes - break the loop
+            break
         elif event == 'Graph':                                              # the graph button opens the graph    
             graphing = True
-            #read_datafiles()
-            #green_values,orange_values = getvalues(Values_list,active_chamber)
             if 'figure_canvas' in globals():
                 clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas)
             window['-COL1-'].update(visible=False)
             window['-COL2-'].update(visible=True)
             window['chamber_info_plt'].update(visible=True)
             figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(Arguments_list,Green_values_list[active_chamber],Orange_values_list[active_chamber]))
-            window.maximize()
+            window.Maximize()
             window['-COL2-'].expand(expand_x=True, expand_y=True, expand_row=False)
         elif event == 'listbox':                                            # something from the list of chambers
             active_chamber = c_list.index(values["listbox"][0])             # change the active chamber
@@ -514,7 +534,7 @@ while True:
             if graphing:
                 clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas)
                 figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(Arguments_list,Green_values_list[active_chamber],Orange_values_list[active_chamber]))
-                window.maximize()
+                window.Maximize()
         elif event =='Syringe control':                                     # if the user clicks on the syringe control button
             syr_win_1 = syringewindow1()                                    # open the first syringe control window
             if syr_win_1 != []:
@@ -526,19 +546,27 @@ while True:
             sg.popup('If you can\'t see the images from the microscope, click Restart Program and make sure that you have provided the correct IP address for the server. \n \n Choose the chamber you wish to see using the list on the left. \n \n If you want to see the graph of the number of cells in a chamber, click on the Graph button. \n \n If you want to control the syringes, click on the Syringe control button. \n \n If you want to change the settings, click on the Restart program button. \n \n If you want to close the program, click on the X in the top right corner of the window.')
         elif event == 'Restart program':                         # if the user clicks on the return to the setup window button
             break
-        if not graphing:      
-            #image = imgask()                                            # image update 
-            chamber_info_img.update('Live video feed from Chamber {}'.format(active_chamber+1))           #                 
-            # log(f'Trying to update image of type {type(image_data)}')       # log the attempt
-            # if isinstance(image_data, bytes):                               # if the image data is bytes, change it to bytes IO
-            #     image_data = io.BytesIO(image_data)
-            # image = Image.open(image_data)                                  # open the image
-            bio = io.BytesIO()                                              # create a bytes IO object
+        if not graphing and not error:      
+            chamber_info_img.update('Live video feed from Chamber {}'.format(active_chamber+1)) 
+            bio.seek(0)
+            bio.truncate()                      
+            #bio = io.BytesIO()                                              # create a bytes IO object
             user_image.save(bio, format='PNG')                                   # save the image to the bytes IO object
             image_elem.update(data=bio.getvalue())                          # update the image element
-            pass
         elif graphing: 
             chamber_info_plt.update('Graph of data from Chamber {}'.format(active_chamber+1))
+        elif error:
+            error_popup = sg.popup_yes_no('The connection to the server was lost. Would you like to restart the program?')
+            if error_popup == 'Yes':
+                event = 'Restart program'
+                break
+            else:
+                error = False
+                stop_event.clear()
+                split_image_thread = threading.Thread(target=split_image,args=(stop_event,))
+                split_image_thread.start()
+                counting_cells_thread = threading.Thread(target=counting_cells_loop,args=(stop_event,))
+                counting_cells_thread.start()
         log('Updated window')
     window.close()
     stop_event.set()
