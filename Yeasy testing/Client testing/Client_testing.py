@@ -26,7 +26,7 @@ while True:
             [[sg.Text('Server IP:')],[sg.Input('127.0.0.1:5000',size=(20, 10),key='-Server IP-')]],
             [[sg.Text('Number of chambers:')],[sg.Input('30',size=(20, 10),key='-Chamber no-')]],
             [[sg.Text('Number of syringes:')],[sg.Input('3',size=(20, 10),key='-Syringe no-')]],
-            [[sg.Text('Cell counting interval [s]:')],[sg.Input('10',size=(20, 10),key='-Counting int-')]],
+            [[sg.Text('Cell counting interval [s]:')],[sg.Input('20',size=(20, 10),key='-Counting int-')]],
             [sg.Button('Cancel', size=(8,2)),sg.Button('Confirm',size=(8,2)),sg.Button('Help',size=(8,2))]
         ]
         setupwindow= sg.Window(f'Program setup',layout,size=(400,300))
@@ -411,6 +411,7 @@ while True:
     ###################### Splitting image thread ################################
     stop_event = threading.Event()
     error = False
+    new_image = False
     def split_image(stop_event):
         while not stop_event.is_set():
             log('[Splitting thread] is trying to read the image')
@@ -434,6 +435,8 @@ while True:
                     small_image = user_image_cropped.crop((left, top, right, bottom))   # Crop the current small image 
                     small_images.append(small_image)                                    # Append the small image to the list of small images
                 small_images_queue.put(small_images)                                    # Put the list of small images in the queue
+                global new_image 
+                new_image = True
                 log('[Splitting thread] sent the image to the queue')
             except:
                 global error
@@ -493,11 +496,14 @@ while True:
     window.Maximize()
 
     while True:
-        event, values = window.read(timeout=500)                    # read the form, set the timeout in miliseconds
-        if event == sg.TIMEOUT_EVENT and not graphing:          # if user doesn't do anything, update the image
-            if not small_images_queue.empty():
-                small_images = small_images_queue.get()
-                user_image = small_images[active_chamber]
+        event, values = window.read(timeout=100)                    # read the form, set the timeout in miliseconds
+        if event == sg.TIMEOUT_EVENT and new_image and not graphing:          # if user doesn't do anything, update the image
+            log('Processing new image...')
+            new_image = False
+            small_images = small_images_queue.get()
+            user_image = ImageTk.PhotoImage(small_images[active_chamber])
+            image_elem.update(data=user_image)
+            log('Loaded new image!')
         elif event == 'Live view' and graphing:                   # the live view button returns to the live view if graphing                                        
             graphing = False
             clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas) # clear the canvas
@@ -538,11 +544,6 @@ while True:
             break
         if not graphing and not error:      
             chamber_info_img.update('Live video feed from Chamber {}'.format(active_chamber+1)) 
-            bio.seek(0)
-            bio.truncate()                      
-            #bio = io.BytesIO()                                              # create a bytes IO object
-            user_image.save(bio, format='PNG')                                   # save the image to the bytes IO object
-            image_elem.update(data=bio.getvalue())                          # update the image element
         elif graphing: 
             chamber_info_plt.update('Graph of data from Chamber {}'.format(active_chamber+1))
         elif error:
@@ -557,7 +558,6 @@ while True:
                 split_image_thread.start()
                 counting_cells_thread = threading.Thread(target=counting_cells_loop,args=(stop_event,))
                 counting_cells_thread.start()
-        log('Updated window')
     window.close()
     stop_event.set()
     if event != 'Restart program':
