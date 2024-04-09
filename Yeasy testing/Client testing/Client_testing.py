@@ -356,8 +356,7 @@ while True:
     Arguments_list = []
     Green_values_list = []
     Orange_values_list = []
-    # create a list of chamber names 
-    c_list = []
+    c_list = []                             # create a list of chamber names 
     for i in range(chamber_number):
         c_list.append('Chamber '+str(i+1))
         Green_values_list.append([])
@@ -414,9 +413,7 @@ while True:
     error = False
     def split_image(stop_event):
         while not stop_event.is_set():
-            #time.sleep(0.2)
             log('[Splitting thread] is trying to read the image')
-            # Get image
             try:
                 user_image_full = Image.open(imgask())
                 width, height = user_image_full.size
@@ -426,14 +423,11 @@ while True:
                 right = width - 3039
                 bottom = height - 500                                             
                 user_image_cropped = user_image_full.crop((left, top, right, bottom))         # Crop the image 
-                # Get the size of the image
-                width, height = user_image_cropped.size
-                # Define the width of each smaller image
-                small_width = width // chamber_number
-                # Create a list to store the smaller images
-                small_images = []
+                width, height = user_image_cropped.size     # Get the size of the image
+                small_width = width // chamber_number           # Define the width of each smaller image
+                global small_images   
                 # Loop over the width of the image in increments of small_width
-                for i in range(30):
+                for i in range(chamber_number):
                     # Define the coordinates for the current small image
                     left = i * small_width
                     top = 0
@@ -449,7 +443,6 @@ while True:
                 error = True
                 log('[Splitting thread] failed to load the image')
                 stop_event.set()
-                #sg.popup('Failed to receive the image from the server. Please restart the program.')
                 break
     split_image_thread = threading.Thread(target=split_image,args=(stop_event,))
     small_images_queue = queue.Queue()
