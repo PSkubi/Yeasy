@@ -422,21 +422,18 @@ while True:
                 top = 0 + 546
                 right = width - 3039
                 bottom = height - 500                                             
-                user_image_cropped = user_image_full.crop((left, top, right, bottom))         # Crop the image 
-                width, height = user_image_cropped.size     # Get the size of the image
-                small_width = width // chamber_number           # Define the width of each smaller image
-                global small_images   
-                # Loop over the width of the image in increments of small_width
-                for i in range(chamber_number):
-                    # Define the coordinates for the current small image
-                    left = i * small_width
+                user_image_cropped = user_image_full.crop((left, top, right, bottom))   # Crop the image 
+                width, height = user_image_cropped.size                                 # Get the size of the image
+                small_width = width // chamber_number                                   # Define the width of each smaller image
+                small_images = []
+                for i in range(chamber_number):         # Loop over the width of the image in increments of small_width
+                    left = i * small_width              # Define the coordinates for the current small image
                     top = 0
                     right = (i + 1) * small_width
                     bottom = height
-                    # Crop the current small image and add it to the list
-                    small_image = user_image_cropped.crop((left, top, right, bottom))
-                    small_images.append(small_image)
-                small_images_queue.put(small_images)
+                    small_image = user_image_cropped.crop((left, top, right, bottom))   # Crop the current small image 
+                    small_images.append(small_image)                                    # Append the small image to the list of small images
+                small_images_queue.put(small_images)                                    # Put the list of small images in the queue
                 log('[Splitting thread] sent the image to the queue')
             except:
                 global error
