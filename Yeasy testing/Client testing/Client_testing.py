@@ -414,11 +414,12 @@ while True:
     new_image = False
     def split_image(stop_event):
         while not stop_event.is_set():
-            log('[Splitting thread] starts reading the image')
+            log('[Splitting thread]: Asking for the image')
             try:
                 user_image_full = Image.open(imgask())
+                log(f'[Splitting thread]: Received the image from the server. Size: ') 
                 width, height = user_image_full.size
-                log(f'[Splitting thread]: Image data loaded>> {width}x{height}')                                   
+                log(f'[Splitting thread]: >> {width}x{height}')                                   
                 user_image_cropped = user_image_full.crop((2517, 546, width - 3039, height - 500))   # Crop the image in order: left, top, right, bottom   
                 width, height = user_image_cropped.size                                 # Get the size of the image
                 small_width = width // chamber_number                                   # Define the width of each smaller image
@@ -429,11 +430,11 @@ while True:
                 small_images_queue.put(small_images)                                    # Put the list of small images in the queue
                 global new_image 
                 new_image = True
-                log('[Splitting thread] sent the image to the queue')
+                log('[Splitting thread]: Sent the image to the queue')
             except Exception as e:
                 global error
                 error = True
-                log(f'[Splitting thread] failed to load the image: {e}')
+                log(f'[Splitting thread]: Failed to load the image: {e}')
                 stop_event.set()
                 break
     split_image_thread = threading.Thread(target=split_image,args=(stop_event,))
