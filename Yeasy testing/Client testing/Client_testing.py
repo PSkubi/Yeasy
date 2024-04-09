@@ -12,6 +12,7 @@ import math
 import glob
 import threading
 import queue
+from datetime import datetime
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 BASE_DIR = os.path.dirname(__file__)                      # base directory for relative paths
 sg.set_options(icon=os.path.join(BASE_DIR,'icon.ico'))    # set the icon for the window
@@ -19,7 +20,7 @@ while True:
     start = time.time() 
     counting_timer = time.time()
     def log(msg):
-        print(f'{round(time.time() - start,2)}: {msg}')
+        print(f'{(time.time() - start):.2f}: {msg}')
     def setupwindow():
         layout = [
             [sg.Text(f'Please select the settings for the program, and click Confirm')],
@@ -414,12 +415,12 @@ while True:
     new_image = False
     def split_image(stop_event):
         while not stop_event.is_set():
-            log('[Splitting thread]: Asking for the image')
+            log(f'[Splitting thread]: Asking for the image. Time is {datetime.now().time()}')
             try:
                 user_image_full = Image.open(imgask())
-                log(f'[Splitting thread]: Received the image from the server. Size: ') 
+                log(f'[Splitting thread]: Received the image from the server. Time is {datetime.now().time()}.') 
                 width, height = user_image_full.size
-                log(f'[Splitting thread]: >> {width}x{height}')                                   
+                log(f'[Splitting thread]: Size: >> {width}x{height}')                                   
                 user_image_cropped = user_image_full.crop((2517, 546, width - 3039, height - 500))   # Crop the image in order: left, top, right, bottom   
                 width, height = user_image_cropped.size                                 # Get the size of the image
                 small_width = width // chamber_number                                   # Define the width of each smaller image
@@ -445,7 +446,7 @@ while True:
     def counting_cells_loop(stop_event):
         while not stop_event.is_set():
             time.sleep(counting_interval)
-            log(f'Trying to count cells in all chambers')   # try to count the cells
+            log(f'[Counting thread]: Trying to count cells in all chambers')   # try to count the cells
             # Save the current image as a tif file.
             global counting_index
             try: 
@@ -453,28 +454,23 @@ while True:
                 whole_image_tif_path = os.path.join(image_files_folder,f'whole_image{counting_index}.tif') # Create a path for the whole image tif file
                 full_image.save(whole_image_tif_path)
                 [splitted_chamber,mask]=sample_read(whole_image_tif_path,chamber_number)
-                counting_list = []
                 for i in range(chamber_number):
                     [cell_numbers,area_list,chamber_img] = cell_counting(i+1,mask,splitted_chamber)
                     log(f'Counted cells in chamber {i+1}, green: {cell_numbers[0]}, orange: {cell_numbers[1]}')
                     Green_values_list[i].append(cell_numbers[0])
                     Orange_values_list[i].append(cell_numbers[1])
-                    #counting_list.append(cell_numbers)
-                log(f'Counted cells in chambers.')
-                log(f'Cell numbers: {counting_list}')
-                #Values_list.append(counting_list)                # append the cell numbers to the values list
                 Arguments_list.append((round((time.time() - start)/60,2))) # append the time (in mins) to the arguments list
-                log(f'Green values list: {Green_values_list}')
-                log(f'Green values list size:\n First dimention: {len(Green_values_list)} \n Second dimention: {len(Green_values_list[0])} \n')
-                log(f'Orange values list: {Orange_values_list} ')
-                log(f'Orange values list size: \n First dimention: {len(Orange_values_list)} \n Second dimention: {len(Orange_values_list[0])} \n')
-                log(f'Arguments list: {Arguments_list}')
-                log(f'Arguments list size: {len(Arguments_list)}')
+                log(f'[Counting thread]: Green values list: {Green_values_list}')
+                log(f'[Counting thread]: Green values list size:\n[Counting thread]: First dimension: {len(Green_values_list)} \n[Counting thread]: Second dimension: {len(Green_values_list[0])} \n')
+                log(f'[Counting thread]: Orange values list: {Orange_values_list} ')
+                log(f'[Counting thread]: Orange values list size: \n[Counting thread]: First dimension: {len(Orange_values_list)} \n[Counting thread]: Second dimension: {len(Orange_values_list[0])} \n')
+                log(f'[Counting thread]: Arguments list: {Arguments_list}')
+                log(f'[Counting thread]: Arguments list size: {len(Arguments_list)}')
                 counting_index += 1
             except:
                 global error
                 error = True
-                log('Counting thread failed to load the image')
+                log('[Counting thread]: Counting thread failed to load the image')
                 #sg.popup('Failed to receive the image from the server. Please restart the program.')
                 stop_event.set()
                 break
