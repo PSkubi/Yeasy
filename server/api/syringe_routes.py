@@ -3,7 +3,7 @@ from flask import Blueprint, request
 # if debug is True, syringe_controller will not exist 
 # and calls to the api will throw errors.
 # only set debug to True when testing api outside the lab
-debug = False
+debug = True
 if debug == False:
     from .syringe_controller import SyringeController
     import serial
