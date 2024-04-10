@@ -1,11 +1,11 @@
 # Yeast Engagement and Alteration Software: Yeasy
 
-## Installation
+## Testing
 
-1. Clone this repository `git clone https://github.com/PSkubi/YeasyImageRead.git`
+First, make sure Python is installed on your computer. Then double click `installer.bat` to run the installation process. This installs the Python libraries needed to run the program and is essential for the testing below to work.
 
-2. Create virtual environment. On mac `python3 -m venv venv` then `source venv/bin/activate` or on Windows `python -m venv venv` then `.\venv\Scripts\activate`.
+### Client
+To test the client, double click the `run_client.bat` file.
 
-3. Install requirements with `pip install -r requirements.txt`.
-
-4. Run the app with `python -m flask --app api run --debug`.
+### Server
+To test the server, double click the `run_server.bat` file.
