@@ -1,24 +1,16 @@
 """Microscope class."""
-from pycromanager import Bridge
+import os
+from pathlib import Path
 
 class Microscope:
-    def __init__(self):
-        # create the Micro-Managert to Pycro-Manager transfer layer
-        bridge = Bridge()
-        # get object representing micro-manager core
-        self.core = bridge.get_core()
+    def __init__(self, image_directory):
+        base_directory = os.path.dirname(__file__)
+        self.image_directory = os.path.join(base_directory, image_directory)
         return
     
     def get_image(self):
-        self.core.snap_image()
-        tagged_image = self.core.get_tagged_image()
-        image_height = tagged_image.tags['Height']
-        image_width = tagged_image.tags['Width']
-        image = tagged_image.pix.reshape((image_height, image_width))
+        """Return most recent image from image_directory"""
+        paths = sorted(Path(self.image_directory).iterdir(), key=os.path.getmtime)
+        with open(paths[-1], 'rb') as f:
+            image = f.read()
         return image
-    
-    def move_stage(self, dx, dy):
-        return
-    
-    def zoom(self, mag):
-        return
