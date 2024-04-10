@@ -542,5 +542,13 @@ while True:
                 counting_cells_thread.start()
     window.close()
     stop_event.set()
+    log('Program stopped!')
+    log('Trying to delete the image files...')
+    imgfiles = glob.glob(f'{image_files_folder}/*.tif')
+    for file in imgfiles:
+        filePath = os.path.join(image_files_folder, file)
+        log(f'Removing {filePath}')
+        os.chmod(filePath, 0o777)
+        os.remove(filePath)
     if event != 'Restart program':
         break
