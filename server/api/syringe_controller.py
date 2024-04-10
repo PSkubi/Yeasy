@@ -1,5 +1,10 @@
 """Syringe controller class."""
-from .syringe import Syringe
+
+# import handling for flask app vs testing in syringe_testing.py
+if __package__ is None or __package__ == '':
+    from syringe import Syringe
+else:
+    from .syringe import Syringe
 
 class SyringeController:
     def __init__(self, conn):
