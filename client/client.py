@@ -438,34 +438,35 @@ while True:
     def counting_cells_loop(stop_event):
         while not stop_event.is_set():
             time.sleep(counting_interval)
-            log(f'[Counting thread]: Trying to count cells in all chambers')   # try to count the cells
-            # Save the current image as a tif file.
-            global counting_index
-            try: 
-                full_image = Image.open(imgask())
-                whole_image_tif_path = os.path.join(image_files_folder,f'whole_image{counting_index}.tif') # Create a path for the whole image tif file
-                full_image.save(whole_image_tif_path)
-                [splitted_chamber,mask]=sample_read(whole_image_tif_path,chamber_number)
-                for i in range(chamber_number):
-                    [cell_numbers,area_list,chamber_img] = cell_counting(i+1,mask,splitted_chamber)
-                    log(f'Counted cells in chamber {i+1}, green: {cell_numbers[0]}, orange: {cell_numbers[1]}')
-                    Green_values_list[i].append(cell_numbers[0])
-                    Orange_values_list[i].append(cell_numbers[1])
-                Arguments_list.append((round((time.time() - start)/60,2))) # append the time (in mins) to the arguments list
-                log(f'[Counting thread]: Green values list: {Green_values_list}')
-                log(f'[Counting thread]: Green values list size:\n[Counting thread]: First dimension: {len(Green_values_list)} \n[Counting thread]: Second dimension: {len(Green_values_list[0])} \n')
-                log(f'[Counting thread]: Orange values list: {Orange_values_list} ')
-                log(f'[Counting thread]: Orange values list size: \n[Counting thread]: First dimension: {len(Orange_values_list)} \n[Counting thread]: Second dimension: {len(Orange_values_list[0])} \n')
-                log(f'[Counting thread]: Arguments list: {Arguments_list}')
-                log(f'[Counting thread]: Arguments list size: {len(Arguments_list)}')
-                counting_index += 1
-            except:
-                global error
-                error = True
-                log('[Counting thread]: Counting thread failed to load the image')
-                #sg.popup('Failed to receive the image from the server. Please restart the program.')
-                stop_event.set()
-                break
+            if not stop_event.is_set():
+                log(f'[Counting thread]: Trying to count cells in all chambers')   # try to count the cells
+                # Save the current image as a tif file.
+                global counting_index
+                try: 
+                    full_image = Image.open(imgask())
+                    whole_image_tif_path = os.path.join(image_files_folder,f'whole_image{counting_index}.tif') # Create a path for the whole image tif file
+                    full_image.save(whole_image_tif_path)
+                    [splitted_chamber,mask]=sample_read(whole_image_tif_path,chamber_number)
+                    for i in range(chamber_number):
+                        [cell_numbers,area_list,chamber_img] = cell_counting(i+1,mask,splitted_chamber)
+                        log(f'Counted cells in chamber {i+1}, green: {cell_numbers[0]}, orange: {cell_numbers[1]}')
+                        Green_values_list[i].append(cell_numbers[0])
+                        Orange_values_list[i].append(cell_numbers[1])
+                    Arguments_list.append((round((time.time() - start)/60,2))) # append the time (in mins) to the arguments list
+                    log(f'[Counting thread]: Green values list: {Green_values_list}')
+                    log(f'[Counting thread]: Green values list size:\n[Counting thread]: First dimension: {len(Green_values_list)} \n[Counting thread]: Second dimension: {len(Green_values_list[0])} \n')
+                    log(f'[Counting thread]: Orange values list: {Orange_values_list} ')
+                    log(f'[Counting thread]: Orange values list size: \n[Counting thread]: First dimension: {len(Orange_values_list)} \n[Counting thread]: Second dimension: {len(Orange_values_list[0])} \n')
+                    log(f'[Counting thread]: Arguments list: {Arguments_list}')
+                    log(f'[Counting thread]: Arguments list size: {len(Arguments_list)}')
+                    counting_index += 1
+                except:
+                    global error
+                    error = True
+                    log('[Counting thread]: Counting thread failed to load the image')
+                    #sg.popup('Failed to receive the image from the server. Please restart the program.')
+                    stop_event.set()
+                    break
     counting_cells_thread = threading.Thread(target=counting_cells_loop,args=(stop_event,))
     counting_cells_thread.start()
     ################################# The main loop ###################################
