@@ -96,14 +96,6 @@ while True:
         response = req.get(endpoint)
         image_bytes = io.BytesIO(response.content)
         return image_bytes
-    def getvalues(value_list,active_chamber):
-        '''Get value lists for a given chamber from a list of values lists'''
-        value_time_list_1 = []
-        value_time_list_2 = []
-        for i in range(len(value_list)):
-            value_time_list_1.append(value_list[i][active_chamber][0])
-            value_time_list_2.append(value_list[i][active_chamber][1])
-        return value_time_list_1,value_time_list_2
     ######################## Syringe Windows ###############################
     def syringe_operation(syringecontrols):
         '''Here will be the code operating the syringe, taking the list of controltype,syringeno,flowrate,control,flowrate_units,control_units'''
