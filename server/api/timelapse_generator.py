@@ -4,7 +4,7 @@ from pathlib import Path
 import shutil
 
 def get_image_paths(directory):
-    paths = sorted(Path(directory).iterdir(), key=os.path.getmtime)
+    paths = sorted(Path(directory).glob("*.tiff"), key=os.path.getmtime)
     return paths
 
 def clear_files(directory):
@@ -26,7 +26,7 @@ try:
     while True:
         for path in image_paths:
             # copy the file
-            shutil.copyfile(path, f"{absolute_path}/timelapse_output_{counter}.tiff")
+            shutil.copyfile(path, f"{absolute_path}/timelapse_output_{path.name}")
             sleep(delay)
             counter += 1
 finally:
