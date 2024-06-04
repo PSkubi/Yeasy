@@ -365,13 +365,13 @@ while True:
 
     # define layout, show and read the form
 
-    canvas_elem = sg.Canvas(size=(1920, 1080),key='-CANVAS-',expand_x=True)
+    canvas_elem = sg.Canvas(size=(0.5*1920, 0.5*1080),key='-CANVAS-',expand_x=True)
     imgcol = [[chamber_info_img],[image_elem]]
     graphcol = [[chamber_info_plt],[canvas_elem]]
 
     leftcol = [
-        [sg.Listbox(values=c_list,font=('Calibri', 20), change_submits=True, size=(30, 20), key='listbox',expand_y=True)],
-        [sg.Button('Live view', size=(8, 2)), sg.Button('Graph', size=(8, 2)),sg.Button('Syringe control',size=(8,2)),sg.Button('Restart program',size=(8,2)),sg.Button('Help',size=(8,2))],
+        [sg.Listbox(values=c_list,font=('Calibri', 20), change_submits=True, size=(35, 20), key='listbox',expand_y=True,expand_x=False)],
+        [sg.Button('Live View', size=(10, 4)), sg.Button('Graph', size=(10, 4)),sg.Button('Syringe\nControl',size=(10,4)),sg.Button('Restart Program',size=(10,4)),sg.Button('Help',size=(10,4))],
     ]
 
     layout = [[sg.Column(leftcol,expand_x=True), sg.Column(imgcol, key='-COL1-',expand_x=True), sg.Column(graphcol, visible=False, key='-COL2-',expand_x=True)]]
@@ -380,12 +380,12 @@ while True:
     # Define the plotting function
 
     def create_plot(plotarguments,plotvalues1,plotvalues2):
-        plt.figure(figsize=(14,9))
+        plt.figure(figsize=(22,13.6))
         plt.plot(plotarguments, plotvalues1, color='green',marker = 'o')
         plt.plot(plotarguments, plotvalues2, color='orange',marker = 'o')
-        plt.title('Number of yeast cells in time',fontsize=20)
-        plt.xlabel('Time [min]',fontsize=20)
-        plt.ylabel('Number of cells', fontsize=20)
+        plt.title('Number of Yeast Cells vs Time',fontsize=20)
+        plt.xlabel('Time [hours]',fontsize=20)
+        plt.ylabel('Number of Cells', fontsize=20)
         plt.grid(True)
         return plt.gcf()
     # Define drawing a figure 
@@ -486,7 +486,7 @@ while True:
             user_image = ImageTk.PhotoImage(small_images[active_chamber])
             image_elem.update(data=user_image)
             log('Loaded new image!')
-        elif event == 'Live view' and graphing:                   # the live view button returns to the live view if graphing                                        
+        elif event == 'Live View' and graphing:                   # the live view button returns to the live view if graphing                                        
             graphing = False
             clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas) # clear the canvas
             window['-COL2-'].update(visible=False)                  # make the canvas column invisible
@@ -513,7 +513,7 @@ while True:
                 clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas)
                 figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(Arguments_list,Green_values_list[active_chamber],Orange_values_list[active_chamber]))
                 window.Maximize()
-        elif event =='Syringe control':                                     # if the user clicks on the syringe control button
+        elif event =='Syringe Control':                                     # if the user clicks on the syringe control button
             syr_win_1 = syringewindow1()                                    # open the first syringe control window
             if syr_win_1 != []:
                 syr_win_2 = syringewindow2(syr_win_1[0],syr_win_1[1],syringe_number)        # open the second syringe control window
@@ -522,12 +522,12 @@ while True:
                     send_syringe_control(syr_win_2)                        # send the operation to the server
         elif event == 'Help':                                              # if the user clicks on the help button
             sg.popup('If you can\'t see the images from the microscope, click Restart Program and make sure that you have provided the correct IP address for the server. \n \n Choose the chamber you wish to see using the list on the left. \n \n If you want to see the graph of the number of cells in a chamber, click on the Graph button. \n \n If you want to control the syringes, click on the Syringe control button. \n \n If you want to change the settings, click on the Restart program button. \n \n If you want to close the program, click on the X in the top right corner of the window.')
-        elif event == 'Restart program':                         # if the user clicks on the return to the setup window button
+        elif event == 'Restart Program':                         # if the user clicks on the return to the setup window button
             break
         if not graphing and not error:      
-            chamber_info_img.update('Live video feed from Chamber {}'.format(active_chamber+1)) 
+            chamber_info_img.update('Live Video Feed from Chamber {}'.format(active_chamber+1)) 
         elif graphing: 
-            chamber_info_plt.update('Graph of data from Chamber {}'.format(active_chamber+1))
+            chamber_info_plt.update('Graph of Data from Chamber {}'.format(active_chamber+1))
         elif error:
             error_popup = sg.popup_yes_no('The connection to the server was lost. Would you like to restart the program?')
             if error_popup == 'Yes':
