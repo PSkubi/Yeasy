@@ -269,11 +269,54 @@ while True:
     
     ## cell counting function for multiple time points
     def cell_counting_mtp(chamber_no, mask, splitted_chamber):
-        
+        #get the chamber_num and get the prepared masks
+        chamber_img=splitted_chamber[chamber_no-1]
+        chamber_mask=mask[chamber_no-1]
+        green_mask_img = chamber_mask[1]
+        orange_mask_img =chamber_mask[0]
+        cropped_mask = [green_mask_img, orange_mask_img]
 
-        
-    def sample_read(sample, chamber_num):
+        #find the contour
+        green_mask=cropped_mask[0]
+        orange_mask=cropped_mask[1]
+        contours_green, hierarchy = cv2.findContours(green_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        contours_orange, hierarchy = cv2.findContours(orange_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        contours=[contours_green,contours_orange]
+        mask_name=['green','orange']
 
+        #define the area of cell
+        average_cell_area = 320
+        connected_cell_area = 600
+        minimum_cell_area = 30
+
+        #counting the cell and draw the detected contour
+        cell_numbers = []
+        area_list = []
+        for i in range(0,len(mask_name)):
+            cells = 0
+            contour_color=[(0,128,0),(0,128,255)]
+            sum_area=0
+            
+            for c in contours[i]:
+                area = cv2.contourArea(c)
+                if area>minimum_cell_area:
+                    sum_area = sum_area + area
+                    cv2.drawContours(chamber_img, [c], -1, contour_color[i], 2)
+                    if area > connected_cell_area:
+                        cells += math.floor(area / average_cell_area)
+                    else:
+                        cells += 1
+            
+            cell_numbers.append(cells)
+            area_list.append(sum_area)
+            
+            print(mask_name[i]+'Cells: {}'.format(cells))
+            print(mask_name[i]+'Area: {}'.format(sum_area))
+
+        return cell_numbers,area_list,chamber_img
+    
+    ## sample_read for single time point
+    def sample_read_stp(sample, chamber_num):
         # read and display the image
         image_file = sample
         img = cv2.imread(image_file)
@@ -349,6 +392,85 @@ while True:
             mask.append(chamber_mask)
 
         return splitted_chamber, mask
+        
+    ## sample_read for multiple time points
+    def sample_read_mtp(sample, chamber_num):
+        # read and display the image
+        image_file = sample
+        img = cv2.imread(image_file)
+        img_colnum = img.shape[1]
+        print('sample colnum: ' + str(img_colnum))
+        img_rownum = img.shape[0]
+        print('sample rownum: ' + str(img_rownum))
+
+        # crop the image and split into multiple chambers
+        cropped_img = img[1100:1850,340:18450]
+        cropped_colnum = cropped_img.shape[1]
+        print('cropped sample colnum: ' + str(cropped_colnum))
+        cropped_rownum = cropped_img.shape[0]
+        print('cropped sample rownum: ' + str(cropped_rownum))
+        chamber_col = cropped_colnum // chamber_num
+        print('chamber colnum: ' + str(chamber_col))
+        print('chamber rownum: ' + str(cropped_rownum))
+        chamber_right_boundary = 0
+        chamber_index = 0
+
+        splitted_chamber = [0] * chamber_num
+        for chamber_left_boundary in range(0, cropped_colnum, chamber_col):
+            if (cropped_colnum - chamber_left_boundary) < chamber_col:
+                break
+
+            chamber_right_boundary = chamber_left_boundary + chamber_col - 1
+            chamber = cropped_img[:, chamber_left_boundary:chamber_right_boundary]
+            splitted_chamber[chamber_index] = chamber
+            chamber_index += 1
+
+        # separate two different fluorescence
+        mask = []
+        for i in range(1, chamber_num + 1):
+            chamber_mask = [0] * 2
+            chamber_img = splitted_chamber[i - 1]
+            chamber_hsv = cv2.cvtColor(chamber_img, cv2.COLOR_BGR2HSV)
+
+            # get the orange one
+            hsv_orange_lower = np.array([10, 40, 40])
+            if i == 24:
+                hsv_orange_upper = np.array([12, 255, 255])
+            else:
+                hsv_orange_upper = np.array([18, 255, 255])
+
+            orange_mask = cv2.inRange(chamber_hsv, hsv_orange_lower, hsv_orange_upper)
+            # cv2.imwrite('chamber'+str(i)+' orange'+'.tif',orange_mask)
+
+            # get the green one
+            if i == 30:
+                hsv_green_lower = np.array([42, 40, 40])
+            else:
+                hsv_green_lower = np.array([36, 40, 35])
+            hsv_green_upper = np.array([70, 255, 255])
+            green_mask = cv2.inRange(chamber_hsv, hsv_green_lower, hsv_green_upper)
+            # cv2.imwrite('chamber' + str(i) + ' green' + '.tif', green_mask)
+
+            # process the orange and green mask
+            kernel = np.ones((2, 2), np.uint8)
+
+            # denoise
+            orange_open = cv2.morphologyEx(orange_mask, cv2.MORPH_OPEN, kernel, iterations=1)
+            green_open = cv2.morphologyEx(green_mask, cv2.MORPH_OPEN, kernel, iterations=1)
+            # cv2.imwrite('chamber' + str(i) + ' open_orange' + '.tif', orange_open)
+            # cv2.imwrite('chamber' + str(i) + ' open_green' + '.tif', green_open)
+
+            # find the background
+            orange_dilation = cv2.dilate(orange_open, kernel, iterations=2)
+            green_dilation = cv2.dilate(green_open, kernel, iterations=2)
+
+            chamber_mask[0] = orange_dilation
+            chamber_mask[1] = green_dilation
+
+            mask.append(chamber_mask)
+
+        return splitted_chamber, mask
+    
     ########################### Graph data Management ############################
     active_chamber = 0
     # Prepare the lists for data storage
@@ -441,6 +563,8 @@ while True:
     split_image_thread.start()
     ###################### Counting cells thread ################################
     counting_index = 0 
+    
+    # multiple time points counting
     def counting_cells_loop(stop_event):
         while not stop_event.is_set():
             time.sleep(counting_interval)
@@ -473,6 +597,8 @@ while True:
                     #sg.popup('Failed to receive the image from the server. Please restart the program.')
                     stop_event.set()
                     break
+                
+    # single time point counting
     def single_time_point_counting_cells_loop(stop_event):
         while not stop_event.is_set():
             time.sleep(counting_interval)
