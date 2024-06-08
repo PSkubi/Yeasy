@@ -395,16 +395,22 @@ while True:
         
     ## sample_read for multiple time points
     def sample_read_mtp(sample, chamber_num):
-        # read and display the image
+        
+        # read and rotate the image
         image_file = sample
         img = cv2.imread(image_file)
-        img_colnum = img.shape[1]
+        height, width = img.shape[:2]
+        center = (width//2, height//2)
+        rotate_matrix = cv2.getRotationMatrix2D(center=center, angle=-3, scale=1)
+        rotated_image = cv2.warpAffine(src=img, M=rotate_matrix, dsize=(width, height))
+        
+        img_colnum = rotated_image.shape[1]
         print('sample colnum: ' + str(img_colnum))
-        img_rownum = img.shape[0]
+        img_rownum = rotated_image.shape[0]
         print('sample rownum: ' + str(img_rownum))
 
         # crop the image and split into multiple chambers
-        cropped_img = img[1100:1850,340:18450]
+        cropped_img = rotated_image[1100:1850,340:18450]
         cropped_colnum = cropped_img.shape[1]
         print('cropped sample colnum: ' + str(cropped_colnum))
         cropped_rownum = cropped_img.shape[0]
@@ -576,9 +582,9 @@ while True:
                     full_image = Image.open(imgask())
                     whole_image_tif_path = os.path.join(image_files_folder,f'whole_image{counting_index}.tif') # Create a path for the whole image tif file
                     full_image.save(whole_image_tif_path)
-                    [splitted_chamber,mask]=sample_read(whole_image_tif_path,chamber_number)
+                    [splitted_chamber,mask]=sample_read_mtp(whole_image_tif_path,chamber_number)
                     for i in range(chamber_number):
-                        [cell_numbers,area_list,chamber_img] = cell_counting(i+1,mask,splitted_chamber)
+                        [cell_numbers,area_list,chamber_img] = cell_counting_mtp(i+1,mask,splitted_chamber)
                         log(f'Counted cells in chamber {i+1}, green: {cell_numbers[0]}, orange: {cell_numbers[1]}')
                         Green_values_list[i].append(cell_numbers[0])
                         Orange_values_list[i].append(cell_numbers[1])
@@ -610,9 +616,9 @@ while True:
                     full_image = Image.open(imgask())
                     whole_image_tif_path = os.path.join(image_files_folder,f'whole_image{counting_index}.tif') # Create a path for the whole image tif file
                     full_image.save(whole_image_tif_path)
-                    [splitted_chamber,mask]=sample_read(whole_image_tif_path,chamber_number)
+                    [splitted_chamber,mask]=sample_read_stp(whole_image_tif_path,chamber_number)
                     for i in range(chamber_number):
-                        [cell_numbers,area_list,chamber_img] = cell_counting(i+1,mask,splitted_chamber)
+                        [cell_numbers,area_list,chamber_img] = cell_counting_stp(i+1,mask,splitted_chamber)
                         log(f'Counted cells in chamber {i+1}, green: {cell_numbers[0]}, orange: {cell_numbers[1]}')
                         Green_values_list[i].append(cell_numbers[0])
                         Orange_values_list[i].append(cell_numbers[1])
