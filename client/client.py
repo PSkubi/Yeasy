@@ -209,8 +209,8 @@ while True:
             return bio.getvalue()
         return ImageTk.PhotoImage(img)
     ########################### Cell counting functions ####################
-    def cell_counting(chamber_no, mask, splitted_chamber):
-
+    ## cell counting function for single time point
+    def cell_counting_stp(chamber_no, mask, splitted_chamber):
         # get the chamber_num and get the prepared masks
         chamber_img = splitted_chamber[chamber_no - 1]
         chamber_mask = mask[chamber_no - 1]
@@ -266,6 +266,12 @@ while True:
             # print(mask_name[i] + 'Area: {}'.format(sum_area))
 
         return cell_numbers, area_list, chamber_img
+    
+    ## cell counting function for multiple time points
+    def cell_counting_mtp(chamber_no, mask, splitted_chamber):
+        
+
+        
     def sample_read(sample, chamber_num):
 
         # read and display the image
