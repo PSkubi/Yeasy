@@ -217,15 +217,12 @@ while True:
         green_mask_img = chamber_mask[1]
         orange_mask_img = chamber_mask[0]
 
-        # delete the mask out of the chamber
-        green_mask_img[:, 0:50] = 0
-        green_mask_img[:, 550::] = 0
-        green_mask_img[0:190, :] = 0
-        green_mask_img[660::, :] = 0
-        orange_mask_img[:, 0:50] = 0
-        orange_mask_img[:, 550::] = 0
-        orange_mask_img[0:200, :] = 0
-        orange_mask_img[660::, :] = 0
+        # manually define the boundary of the chip
+        row_downlimit=190
+        col_downlimit=50
+        row_uplimit=660
+        col_uplimit=550
+       
         cropped_mask = [green_mask_img, orange_mask_img]
 
         # find the contour
@@ -250,20 +247,30 @@ while True:
             sum_area = 0
 
             for c in contours[i]:
-                area = cv2.contourArea(c)
-                if area > minimum_cell_area:
-                    sum_area = sum_area + area
-                    cv2.drawContours(chamber_img, [c], -1, contour_color[i], 2)
-                    if area > connected_cell_area:
-                        cells += math.floor(area / average_cell_area)
-                    else:
-                        cells += 1
+                rec_start=(col_downlimit,row_downlimit)
+                rec_end=(col_uplimit,row_uplimit)
+                M = cv2.moments(c)
+                cX = int(M["m10"] / M["m00"])
+                cY = int(M["m01"] / M["m00"])
+                if (col_downlimit<cX<col_uplimit) and (row_downlimit<cY<row_uplimit):
+                    area = cv2.contourArea(c)
+                    if area > minimum_cell_area:
+                        sum_area = sum_area + area
+                        cv2.drawContours(chamber_img, [c], -1, contour_color[i], 2)
+                        if area > connected_cell_area:
+                            cell_number=math.floor(area / average_cell_area)
+                            cells += cell_number
+                            cv2.putText(chamber_img, str(cell_number), (cX - 40, cY - 40), cv2.FONT_HERSHEY_SIMPLEX,2, contour_color[i], 2)
+                        else:
+                            cell_number=1
+                            cells += cell_number
+                            cv2.putText(chamber_img, str(cell_number), (cX - 40, cY - 40), cv2.FONT_HERSHEY_SIMPLEX,2, contour_color[i], 2)
 
             cell_numbers.append(cells)
             area_list.append(sum_area)
 
-            # print(mask_name[i] + 'Cells: {}'.format(cells))
-            # print(mask_name[i] + 'Area: {}'.format(sum_area))
+            print(mask_name[i] + 'Cells: {}'.format(cells))
+            print(mask_name[i] + 'Area: {}'.format(sum_area))
 
         return cell_numbers, area_list, chamber_img
     
