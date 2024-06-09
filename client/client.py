@@ -407,9 +407,9 @@ while True:
     new_image = False
     def split_image(stop_event):
         Timing_list = []
-        i = 0
-        while not stop_event.is_set() and i<100:
-            log(f'[Splitting thread]: Asking for the image. Time is {datetime.now().time()}')
+        j = 0
+        while not stop_event.is_set() and j<100:
+            log(f'[Splitting thread]: Asking for image number {j}. Time is {datetime.now().time()}')
             start = time.time()
             try:
                 user_image_full = Image.open(imgask())
@@ -426,10 +426,10 @@ while True:
                 small_images_queue.put(small_images)                                    # Put the list of small images in the queue
                 global new_image 
                 new_image = True
-                log('[Splitting thread]: Sent the image to the queue')
+                log(f'[Splitting thread]: Sent the image number {j} to the queue')
                 end = time.time()
                 Timing_list.append(end-start)
-                i+=1
+                j+=1
             except Exception as e:
                 global error
                 error = True
@@ -438,7 +438,7 @@ while True:
                 break
         log(f'[Splitting thread]: Stopped the thread')
         log(f'[Splitting thread]: Timing measurement complete! Results:')
-        log(f'[Splitting thread]: Counter: {i}')
+        log(f'[Splitting thread]: Counter: {j}')
         log(f'[Splitting thread]: Number of measurements: {len(Timing_list)}')
         log(f'[Splitting thread]: Average time to process the image: {sum(Timing_list)/len(Timing_list)}')
         log(f'[Splitting thread]: Maximum time to process the image: {max(Timing_list)}')
