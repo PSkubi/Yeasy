@@ -653,7 +653,10 @@ while True:
                     #sg.popup('Failed to receive the image from the server. Please restart the program.')
                     stop_event.set()
                     break
-    counting_cells_thread = threading.Thread(target=counting_cells_loop,args=(stop_event,))
+    if SingleTimePoint:
+        counting_cells_thread = threading.Thread(target=single_time_point_counting_cells_loop,args=(stop_event,))
+    else:
+        counting_cells_thread = threading.Thread(target=counting_cells_loop,args=(stop_event,))
     counting_cells_thread.start()
     ################################# The main loop ###################################
     graphing = False
