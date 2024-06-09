@@ -406,8 +406,11 @@ while True:
     error = False
     new_image = False
     def split_image(stop_event):
-        while not stop_event.is_set():
+        Timing_list = []
+        i = 0
+        while not stop_event.is_set() and i<100:
             log(f'[Splitting thread]: Asking for the image. Time is {datetime.now().time()}')
+            start = time.time()
             try:
                 user_image_full = Image.open(imgask())
                 log(f'[Splitting thread]: Received the image from the server. Time is {datetime.now().time()}.') 
@@ -424,12 +427,23 @@ while True:
                 global new_image 
                 new_image = True
                 log('[Splitting thread]: Sent the image to the queue')
+                end = time.time()
+                Timing_list.append(end-start)
+                i+=1
             except Exception as e:
                 global error
                 error = True
                 log(f'[Splitting thread]: Failed to load the image: {e}')
                 stop_event.set()
                 break
+        log(f'[Splitting thread]: Stopped the thread')
+        log(f'[Splitting thread]: Timing measurement complete! Results:')
+        log(f'[Splitting thread]: Counter: {i}')
+        log(f'[Splitting thread]: Number of measurements: {len(Timing_list)}')
+        log(f'[Splitting thread]: Average time to process the image: {sum(Timing_list)/len(Timing_list)}')
+        log(f'[Splitting thread]: Maximum time to process the image: {max(Timing_list)}')
+        log(f'[Splitting thread]: Minimum time to process the image: {min(Timing_list)}')
+        i =0
     split_image_thread = threading.Thread(target=split_image,args=(stop_event,))
     small_images_queue = queue.Queue()
     split_image_thread.start()
@@ -467,8 +481,9 @@ while True:
                     #sg.popup('Failed to receive the image from the server. Please restart the program.')
                     stop_event.set()
                     break
-    counting_cells_thread = threading.Thread(target=counting_cells_loop,args=(stop_event,))
-    counting_cells_thread.start()
+    if not counting_interval == 0:
+        counting_cells_thread = threading.Thread(target=counting_cells_loop,args=(stop_event,))
+        counting_cells_thread.start()
     ################################# The main loop ###################################
     graphing = False
     bio = io.BytesIO()
