@@ -28,7 +28,7 @@ while True:
             [[sg.Text('Number of chambers:')],[sg.Input('30',size=(20, 10),key='-Chamber no-')]],
             [[sg.Text('Number of syringes:')],[sg.Input('3',size=(20, 10),key='-Syringe no-')]],
             [[sg.Text('Cell counting interval [s]:')],[sg.Input('20',size=(20, 10),key='-Counting int-')]],
-            [sg.Button('Cancel', size=(8,2)),sg.Button('Confirm',size=(8,2)),sg.Button('Help',size=(8,2))]
+            [sg.Button('Single time point', size=(8,2)),sg.Button('Cancel', size=(8,2)),sg.Button('Confirm',size=(8,2)),sg.Button('Help',size=(8,2))]
         ]
         setupwindow= sg.Window(f'Program setup',layout,size=(400,300))
         while True:
@@ -42,15 +42,24 @@ while True:
                     sg.popup('Invalid input! Try again')
                     userinput = [[],[],[],[]]
                 break
+            elif event == 'Single time point':
+                single_time_point_choice = sg.popup_yes_no('Do you want to show the software version for a single time point?')
+                global SingleTimePoint
+                if single_time_point_choice == 'Yes':
+                    log('Single time point mode enabled')
+                    SingleTimePoint = True
+                else:
+                    log('Single time point mode disabled')
+                    SingleTimePoint = False
             elif event == 'Help':
                 sg.popup('Please enter the IP address of the server, the number of chambers and the number of syringes. \n \n The IP address should be similar to this: 127.0.0.1:5000, and is displayed when launching the Server.\n  \n The number of chambers for the dedicated chip is 30, but setting this to 15 will enable the user to view two chambers at once. \n \n Click Confirm after writing these settings to continue.')
         setupwindow.close()
         return userinput
+    SingleTimePoint = False
     setup = setupwindow()
     while setup == [[],[],[],[]]:
         setup = setupwindow()
-    SingleTimePoint = False
-    log(f'Loaded setup: Server IP is {setup[0]}, number of chambers is {setup[1]}, number of syringes is {setup[2]}, counting interval is {setup[3]}s')
+    log(f'Loaded setup: Server IP is {setup[0]}, number of chambers is {setup[1]}, number of syringes is {setup[2]}, counting interval is {setup[3]}s \n Single time point: {SingleTimePoint}')
 
     ########################## Constant values setup ############################
                                 
