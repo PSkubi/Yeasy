@@ -518,11 +518,16 @@ while True:
     canvas_elem = sg.Canvas(size=(0.5*1920, 0.5*1080),key='-CANVAS-',expand_x=True)
     imgcol = [[chamber_info_img],[image_elem]]
     graphcol = [[chamber_info_plt],[canvas_elem]]
-
-    leftcol = [
+    if SingleTimePoint == True:
+        leftcol = [
         [sg.Listbox(values=c_list,font=('Calibri', 20), change_submits=True, size=(35, 20), key='listbox',expand_y=True,expand_x=False)],
-        [sg.Button('Live View', size=(10, 4)), sg.Button('Graph', size=(10, 4)),sg.Button('Syringe\nControl',size=(10,4)),sg.Button('Restart Program',size=(10,4)),sg.Button('Help',size=(10,4))],
-    ]
+        [sg.Button('Live View', size=(10, 4)), sg.Button('Contour for Counting', size=(10, 4)),sg.Button('Syringe\nControl',size=(10,4)),sg.Button('Restart Program',size=(10,4)),sg.Button('Help',size=(10,4))],
+        ]
+    else:
+        leftcol = [
+            [sg.Listbox(values=c_list,font=('Calibri', 20), change_submits=True, size=(35, 20), key='listbox',expand_y=True,expand_x=False)],
+            [sg.Button('Live View', size=(10, 4)), sg.Button('Graph', size=(10, 4)),sg.Button('Syringe\nControl',size=(10,4)),sg.Button('Restart Program',size=(10,4)),sg.Button('Help',size=(10,4))],
+        ]
 
     layout = [[sg.Column(leftcol,expand_x=True), sg.Column(imgcol, key='-COL1-',expand_x=True), sg.Column(graphcol, visible=False, key='-COL2-',expand_x=True)]]
     ################################# Plot setup #########################################
@@ -545,7 +550,14 @@ while True:
         figure_canvas_agg.draw()
         figure_canvas_agg.get_tk_widget().pack(side='top',fill='both',expand=1)
         return figure_canvas_agg
-
+    def draw_contour(canvas,figure):
+        figure = figure[:, :, ::-1]
+        fig, ax = plt.subplots(figsize=(14, 10))
+        ax.imshow(figure)
+        figure_canvas = FigureCanvasTkAgg(fig, master=canvas)
+        figure_canvas.draw()
+        figure_canvas.get_tk_widget().pack(side='top', fill='both', expand=1)
+        return figure_canvas
     # Define clearing a canvas
     def clear_canvas(canvas, figure_canvas_agg):
         # Clear the figure
@@ -621,6 +633,7 @@ while True:
                     break
                 
     # single time point counting
+    chamber_contours = []
     def single_time_point_counting_cells_loop(stop_event):
         while not stop_event.is_set():
             time.sleep(counting_interval)
@@ -638,6 +651,8 @@ while True:
                         log(f'Counted cells in chamber {i+1}, green: {cell_numbers[0]}, orange: {cell_numbers[1]}')
                         Green_values_list[i].append(cell_numbers[0])
                         Orange_values_list[i].append(cell_numbers[1])
+                        global chamber_contours 
+                        chamber_contours.append(chamber_img)
                     Arguments_list.append((round((time.time() - start)/60,2))) # append the time (in mins) to the arguments list
                     log(f'[Counting thread]: Green values list: {Green_values_list}')
                     log(f'[Counting thread]: Green values list size:\n[Counting thread]: First dimension: {len(Green_values_list)} \n[Counting thread]: Second dimension: {len(Green_values_list[0])} \n')
@@ -695,13 +710,22 @@ while True:
             figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(Arguments_list,Green_values_list[active_chamber],Orange_values_list[active_chamber]))
             window.Maximize()
             window['-COL2-'].expand(expand_x=True, expand_y=True, expand_row=False)
-        elif event == 'listbox':                                            # something from the list of chambers
+        elif event == 'listbox' and not SingleTimePoint:
             active_chamber = c_list.index(values["listbox"][0])             # change the active chamber
             log(f'Changed active chamber to {active_chamber+1}')            # log the change
             if graphing:
                 clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas)
                 figure_canvas = draw_figure(window['-CANVAS-'].TKCanvas,create_plot(Arguments_list,Green_values_list[active_chamber],Orange_values_list[active_chamber]))
                 window.Maximize()
+        elif event == 'listbox' and SingleTimePoint and graphing:
+            active_chamber = c_list.index(values["listbox"][0])             # change the active chamber
+            log(f'Changed active chamber to {active_chamber+1}')            # log the change
+            clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas)
+            figure_canvas = draw_contour(window['-CANVAS-'].TKCanvas,chamber_contours[active_chamber])
+            window.Maximize()
+        elif event == 'listbox' and SingleTimePoint and not graphing:
+            active_chamber = c_list.index(values["listbox"][0])             # change the active chamber
+            log(f'Changed active chamber to {active_chamber+1}')            # log the change
         elif event =='Syringe Control':                                     # if the user clicks on the syringe control button
             syr_win_1 = syringewindow1()                                    # open the first syringe control window
             if syr_win_1 != []:
@@ -713,10 +737,26 @@ while True:
             sg.popup('If you can\'t see the images from the microscope, click Restart Program and make sure that you have provided the correct IP address for the server. \n \n Choose the chamber you wish to see using the list on the left. \n \n If you want to see the graph of the number of cells in a chamber, click on the Graph button. \n \n If you want to control the syringes, click on the Syringe control button. \n \n If you want to change the settings, click on the Restart program button. \n \n If you want to close the program, click on the X in the top right corner of the window.')
         elif event == 'Restart Program':                         # if the user clicks on the return to the setup window button
             break
+        elif event == 'Contour for Counting':
+            if chamber_contours != []:
+                log('Drawing the contour for counting...')
+                graphing = True
+                if 'figure_canvas' in globals():
+                    clear_canvas(window['-CANVAS-'].TKCanvas,figure_canvas)
+                window['-COL1-'].update(visible=False)
+                window['-COL2-'].update(visible=True)
+                window['chamber_info_plt'].update(visible=True)
+                figure_canvas = draw_contour(window['-CANVAS-'].TKCanvas,chamber_contours[active_chamber])
+                window.Maximize()
+                window['-COL2-'].expand(expand_x=True, expand_y=True, expand_row=False)
+            else:
+                sg.popup('The contour for counting is not available. Please wait for the next image to be processed.')
         if not graphing and not error:      
             chamber_info_img.update('Live Video Feed from Chamber {}'.format(active_chamber+1)) 
-        elif graphing: 
+        elif graphing and not SingleTimePoint: 
             chamber_info_plt.update('Graph of Data from Chamber {}'.format(active_chamber+1))
+        elif graphing and SingleTimePoint:
+            chamber_info_plt.update('Contour for Counting in Chamber {}'.format(active_chamber+1))
         elif error:
             error_popup = sg.popup_yes_no('The connection to the server was lost. Would you like to restart the program?')
             if error_popup == 'Yes':
