@@ -1,1 +1,1 @@
-python -m flask --app api run --debug & python api/timelapse_generator.py
+python -m flask --app api run --debug && python api/timelapse_generator.py

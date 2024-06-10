@@ -12,7 +12,7 @@ def clear_files(directory):
         path.unlink()
     return
 
-FPS = 1
+FPS = 2
 delay = 1./float(FPS)
 directory = "microscope_timelapse"
 base_directory = os.path.dirname(__file__)

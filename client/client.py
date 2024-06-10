@@ -95,6 +95,7 @@ while True:
         endpoint = f"{SERVER}/microscope/image"
         response = req.get(endpoint)
         image_bytes = io.BytesIO(response.content)
+        image_bytes.seek(0)
         return image_bytes
     ######################## Syringe Windows ###############################
     def syringe_operation(syringecontrols):
@@ -430,6 +431,8 @@ while True:
                 end = time.time()
                 Timing_list.append(end-start)
                 j+=1
+            except IOError:
+                log('[Splitting thread]: Failed to load the bytes of the image from the server. Continuing...')
             except Exception as e:
                 global error
                 error = True
