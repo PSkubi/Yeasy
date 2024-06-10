@@ -574,8 +574,10 @@ while True:
                 user_image_full = Image.open(imgask())
                 log(f'[Splitting thread]: Received the image from the server. Time is {datetime.now().time()}.') 
                 width, height = user_image_full.size
-                log(f'[Splitting thread]: Size: >> {width}x{height}')                                   
-                user_image_cropped = user_image_full.crop((2517, 546, width - 3039, height - 500))   # Crop the image in order: left, top, right, bottom   
+                log(f'[Splitting thread]: Size: >> {width}x{height}')  
+                user_image_full = user_image_full.rotate(-3)                               
+                # user_image_cropped = user_image_full.crop((2517, 546, width - 3039, height - 500))   # Crop the image in order: left, top, right, bottom   
+                user_image_cropped = user_image_full.crop((340,546,18450,2150))
                 width, height = user_image_cropped.size                                 # Get the size of the image
                 small_width = width // chamber_number                                   # Define the width of each smaller image
                 small_images = []
@@ -586,6 +588,8 @@ while True:
                 global new_image 
                 new_image = True
                 log('[Splitting thread]: Sent the image to the queue')
+            except IOError:
+                log('[Splitting thread]: Failed to load the bytes of the image from the server. Continuing...')
             except Exception as e:
                 global error
                 error = True
